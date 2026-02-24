@@ -1,0 +1,214 @@
+# .htaccess
+# Security and URL rewriting for RAYS OF GRACE Junior School
+
+# Enable rewrite engine
+RewriteEngine On
+
+# ========================================
+# SECURITY HEADERS
+# ========================================
+
+# Enable HSTS (HTTP Strict Transport Security)
+Header set Strict-Transport-Security "max-age=31536000; includeSubDomains" env=HTTPS
+
+# Prevent MIME type sniffing
+Header set X-Content-Type-Options "nosniff"
+
+# Enable XSS protection
+Header set X-XSS-Protection "1; mode=block"
+
+# Prevent clickjacking
+Header set X-Frame-Options "SAMEORIGIN"
+
+# Referrer policy
+Header set Referrer-Policy "strict-origin-when-cross-origin"
+
+# Content Security Policy
+Header set Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com; style-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com; img-src 'self' data: https:; font-src 'self' https://cdnjs.cloudflare.com; connect-src 'self' https://api.raysofgrace.ac.ug; frame-ancestors 'none'; base-uri 'self'; form-action 'self'"
+
+# Feature Policy
+Header set Feature-Policy "geolocation 'none'; microphone 'none'; camera 'none'; payment 'self'"
+
+# ========================================
+# URL REWRITING
+# ========================================
+
+# Force HTTPS
+RewriteCond %{HTTPS} off
+RewriteRule ^(.*)$ https://%{HTTP_HOST}/$1 [R=301,L]
+
+# Remove www
+RewriteCond %{HTTP_HOST} ^www\.raysofgrace\.ac\.ug [NC]
+RewriteRule ^(.*)$ https://raysofgrace.ac.ug/$1 [L,R=301]
+
+# Pretty URLs for lessons
+RewriteRule ^lesson/([0-9]+)/([a-zA-Z0-9-]+)$ lesson-view.php?id=$1 [L,QSA]
+RewriteRule ^class/([A-Z0-9]+)$ lessons.php?class=$1 [L,QSA]
+RewriteRule ^subject/([A-Z0-9]+)/([a-zA-Z-]+)$ lessons.php?class=$1&subject=$2 [L,QSA]
+
+# User profiles
+RewriteRule ^profile/([0-9]+)$ profile.php?id=$1 [L,QSA]
+
+# Quiz URLs
+RewriteRule ^quiz/([0-9]+)$ quiz.php?lesson=$1 [L,QSA]
+RewriteRule ^quiz-results/([0-9]+)$ quiz-results.php?id=$1 [L,QSA]
+
+# Admin URLs
+RewriteRule ^admin/dashboard$ admin/index.php [L]
+RewriteRule ^admin/users$ admin/manage-users.php [L]
+RewriteRule ^admin/lessons$ admin/lessons.php [L]
+RewriteRule ^admin/upload$ admin/upload-lesson.php [L]
+RewriteRule ^admin/analytics$ admin/analytics.php [L]
+
+# ========================================
+# CACHING
+# ========================================
+
+# Cache static assets
+<FilesMatch "\.(css|js|jpg|jpeg|png|gif|ico|svg|woff|woff2|ttf|eot)$">
+    Header set Cache-Control "max-age=2592000, public"
+</FilesMatch>
+
+# Cache HTML and PHP files for shorter period
+<FilesMatch "\.(html|php)$">
+    Header set Cache-Control "max-age=3600, must-revalidate"
+</FilesMatch>
+
+# ========================================
+# COMPRESSION
+# ========================================
+
+# Enable GZIP compression
+<IfModule mod_deflate.c>
+    AddOutputFilterByType DEFLATE text/html text/plain text/xml text/css text/javascript
+    AddOutputFilterByType DEFLATE application/javascript application/x-javascript application/json
+    AddOutputFilterByType DEFLATE application/xml application/rss+xml application/atom+xml
+    AddOutputFilterByType DEFLATE image/svg+xml
+    
+    # Remove browser bugs
+    BrowserMatch ^Mozilla/4 gzip-only-text/html
+    BrowserMatch ^Mozilla/4\.0[678] no-gzip
+    BrowserMatch \bMSIE !no-gzip !gzip-only-text/html
+    Header append Vary User-Agent
+</IfModule>
+
+# ========================================
+# SECURITY - BLOCK BAD BOTS
+# ========================================
+
+# Block bad bots
+RewriteCond %{HTTP_USER_AGENT} ^.*(ahrefs|mj12|semrush|majestic|rogerbot|dotbot).*$ [NC]
+RewriteRule .* - [F,L]
+
+# Block access to hidden files
+RewriteRule "(^|/)\." - [F]
+
+# Block access to sensitive files
+<FilesMatch "\.(sql|log|bak|config|ini|sh|inc|old|git|env)$">
+    Order allow,deny
+    Deny from all
+</FilesMatch>
+
+# Protect includes directory
+<IfModule mod_rewrite.c>
+    RewriteRule ^includes/.*$ - [F,L]
+</IfModule>
+
+# ========================================
+# ERROR PAGES
+# ========================================
+
+ErrorDocument 400 /error.php?code=400
+ErrorDocument 401 /error.php?code=401
+ErrorDocument 403 /error.php?code=403
+ErrorDocument 404 /error.php?code=404
+ErrorDocument 500 /error.php?code=500
+
+# ========================================
+# PHP SETTINGS
+# ========================================
+
+<IfModule mod_php7.c>
+    # Maximum upload size
+    php_value upload_max_filesize 500M
+    php_value post_max_size 500M
+    php_value max_execution_time 300
+    php_value max_input_time 300
+    php_value memory_limit 256M
+    
+    # Session security
+    php_value session.cookie_httponly 1
+    php_value session.cookie_secure 1
+    php_value session.use_strict_mode 1
+    php_value session.cookie_samesite "Strict"
+    
+    # Disable PHP info exposure
+    php_flag expose_php Off
+    
+    # Error reporting (disable in production)
+    php_flag display_errors Off
+    php_flag log_errors On
+    php_value error_log /path/to/error.log
+</IfModule>
+
+# ========================================
+# CORS HEADERS
+# ========================================
+
+# Allow API access
+<IfModule mod_headers.c>
+    Header set Access-Control-Allow-Origin "https://raysofgrace.ac.ug"
+    Header set Access-Control-Allow-Methods "GET, POST, PUT, DELETE, OPTIONS"
+    Header set Access-Control-Allow-Headers "Content-Type, Authorization"
+    Header set Access-Control-Allow-Credentials "true"
+</IfModule>
+
+# ========================================
+# REDIRECTS
+# ========================================
+
+# Redirect old URLs
+Redirect 301 /old-lessons.php /lessons.php
+Redirect 301 /old-contact.php /contact.php
+
+# Prevent directory browsing
+Options -Indexes
+
+# ========================================
+# CUSTOM ERROR HANDLING
+# ========================================
+
+# Catch 404 errors and handle via PHP
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule ^(.*)$ index.php?url=$1 [QSA,L]
+
+# ========================================
+# PERFORMANCE OPTIMIZATION
+# ========================================
+
+# Keep alive connections
+<IfModule mod_headers.c>
+    Header set Connection keep-alive
+</IfModule>
+
+# Enable ETags
+FileETag MTime Size
+
+# ========================================
+# RATE LIMITING (if using mod_evasive)
+# ========================================
+
+<IfModule mod_evasive20.c>
+    DOSHashTableSize 3097
+    DOSPageCount 2
+    DOSSiteCount 50
+    DOSPageInterval 1
+    DOSSiteInterval 1
+    DOSBlockingPeriod 10
+</IfModule>
+
+# ========================================
+# END OF .HTACCESS
+# Knowledge Changing Lives Forever
+# ========================================

@@ -1,0 +1,187 @@
+# robots.txt for RAYS OF GRACE Junior School
+# Knowledge Changing Lives Forever
+
+# Allow all bots to crawl the main site
+User-agent: *
+Allow: /
+Allow: /lessons.php
+Allow: /index.php
+Allow: /about.php
+Allow: /contact.php
+Allow: /pricing.php
+Allow: /css/
+Allow: /js/
+Allow: /images/
+
+# Disallow admin areas
+Disallow: /admin/
+Disallow: /includes/
+Disallow: /config/
+Disallow: /temp/
+Disallow: /cache/
+Disallow: /logs/
+
+# Disallow user-specific pages
+Disallow: /profile.php
+Disallow: /dashboard.php
+Disallow: /payment.php
+Disallow: /payment-*.php
+Disallow: /downloads.php
+
+# Disallow dynamic URLs with parameters
+Disallow: /*?*
+Disallow: /*&*
+
+# Disallow login and registration
+Disallow: /login.php
+Disallow: /register.php
+Disallow: /forgot-password.php
+Disallow: /reset-password.php
+
+# Disallow API endpoints
+Disallow: /api/
+
+# Disallow temporary files
+Disallow: /*.tmp$
+Disallow: /*.temp$
+Disallow: /*.bak$
+Disallow: /*.old$
+
+# Sitemap location
+Sitemap: https://raysofgrace.ac.ug/sitemap.xml
+
+# Crawl delay for polite bots
+Crawl-delay: 5
+
+# ========================================
+# SPECIFIC BOT RULES
+# ========================================
+
+# Googlebot
+User-agent: Googlebot
+Allow: /
+Disallow: /admin/
+Disallow: /includes/
+Crawl-delay: 2
+
+# Bingbot
+User-agent: Bingbot
+Allow: /
+Disallow: /admin/
+Disallow: /includes/
+Crawl-delay: 2
+
+# Yandex
+User-agent: Yandex
+Allow: /
+Disallow: /admin/
+Disallow: /includes/
+Crawl-delay: 2
+
+# Baiduspider
+User-agent: Baiduspider
+Allow: /
+Disallow: /admin/
+Disallow: /includes/
+Crawl-delay: 5
+
+# ========================================
+# BLOCK BAD BOTS
+# ========================================
+
+# Block content scrapers
+User-agent: DotBot
+Disallow: /
+
+User-agent: AhrefsBot
+Disallow: /
+
+User-agent: MJ12bot
+Disallow: /
+
+User-agent: SemrushBot
+Disallow: /
+
+User-agent: Majestic
+Disallow: /
+
+User-agent: rogerbot
+Disallow: /
+
+User-agent: Exabot
+Disallow: /
+
+User-agent: archive.org_bot
+Disallow: /
+
+# Block AI crawlers (optional - uncomment if needed)
+# User-agent: GPTBot
+# Disallow: /
+# 
+# User-agent: ChatGPT-User
+# Disallow: /
+# 
+# User-agent: Google-Extended
+# Disallow: /
+
+# ========================================
+# CRAWL DELAY FOR ALL BOTS
+# ========================================
+
+# Set a global crawl delay
+User-agent: *
+Crawl-delay: 5
+
+# ========================================
+# HOST AND CLEAN URLS
+# ========================================
+
+Host: https://raysofgrace.ac.ug
+
+# ========================================
+# SITEMAP INDEX
+# ========================================
+
+# Main sitemap
+Sitemap: https://raysofgrace.ac.ug/sitemap.xml
+
+# Video sitemap
+Sitemap: https://raysofgrace.ac.ug/video-sitemap.xml
+
+# Image sitemap
+Sitemap: https://raysofgrace.ac.ug/image-sitemap.xml
+
+# News sitemap (if applicable)
+# Sitemap: https://raysofgrace.ac.ug/news-sitemap.xml
+
+# ========================================
+# ADDITIONAL RULES FOR SEO
+# ========================================
+
+# Specify canonical domain
+User-agent: *
+Disallow: /index.php?*
+
+# Prevent duplicate content
+User-agent: *
+Disallow: /*print
+Disallow: /*pdf
+Disallow: /*sort=
+
+# Block access to development areas
+User-agent: *
+Disallow: /dev/
+Disallow: /test/
+Disallow: /staging/
+
+# Block access to private files
+User-agent: *
+Disallow: /*.pdf$
+Disallow: /*.mp4$
+Disallow: /*.zip$
+Disallow: /*.sql$
+
+# ========================================
+# END OF ROBOTS.TXT
+# Knowledge Changing Lives Forever
+# ========================================

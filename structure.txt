@@ -1,0 +1,21 @@
+raysofgrace.ac.ug/
+├── index.php
+├── login.php
+├── register.php
+├── dashboard.php
+├── lessons.php
+├── quiz.php
+├── admin/
+│   ├── index.php
+│   ├── upload-lesson.php
+│   └── manage-users.php
+├── includes/
+│   ├── config.php
+│   ├── functions.php
+│   └── auth.php
+├── css/
+│   └── style.css
+├── js/
+│   └── main.js
+└── sql/
+    └── database.sql

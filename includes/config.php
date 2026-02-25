@@ -77,4 +77,19 @@ function calculateFamilyDiscount($numberOfChildren, $basePrice) {
     }
     return $basePrice;
 }
+
+/**
+ * Main Configuration - Auto-detects environment
+ */
+
+// Detect if we're on localhost or production
+$is_local = in_array($_SERVER['SERVER_NAME'] ?? '', ['localhost', '127.0.0.1']);
+
+if ($is_local) {
+    // Load local development configuration
+    require_once __DIR__ . '/config.local.php';
+} else {
+    // Load production configuration (Render)
+    require_once __DIR__ . '/config.production.php';
+}
 ?>

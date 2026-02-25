@@ -66,7 +66,7 @@
                 <a href="register.php" class="btn btn-primary btn-large">
                     <i class="fas fa-rocket"></i> Start Learning
                 </a>
-                <a href="#free-lessons" class="btn btn-outline btn-large">
+                <a href="trial.php" class="btn btn-outline btn-large">
                     <i class="fas fa-play-circle"></i> Free Trial
                 </a>
             </div>
@@ -386,7 +386,7 @@
                     <i class="fas fa-leaf"></i>
                     <h3>P.4 Science</h3>
                     <p>Plants and photosynthesis</p>
-                    <a href="#" class="trial-btn">Watch Free <i class="fas fa-play"></i></a>
+                    <a href="" class="trial-btn">Watch Free <i class="fas fa-play"></i></a>
                 </div>
                 <div class="trial-card">
                     <i class="fas fa-calculator"></i>

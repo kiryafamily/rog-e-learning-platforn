@@ -1,5 +1,5 @@
 <?php
-// Production configuration
+// Production configuration are ready
 
 // Only define if not already defined
 if (!defined('DB_HOST')) define('DB_HOST', getenv('DB_HOST') ?: 'localhost');

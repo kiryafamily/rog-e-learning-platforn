@@ -77,7 +77,7 @@ try {
     if (!$is_local) {
         // Skip SSL verification for now to test
         $options[PDO::MYSQL_ATTR_SSL_VERIFY_SERVER_CERT] = false;
-        error_log("SSL: Skipping certificate verification");
+        $options[PDO::MYSQL_ATTR_SSL_CA] = '';
     }
     
     $pdo = new PDO($dsn, DB_USER, DB_PASS, $options);

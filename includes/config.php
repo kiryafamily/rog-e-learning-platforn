@@ -62,10 +62,9 @@ try {
         PDO::ATTR_EMULATE_PREPARES => false,
         PDO::ATTR_TIMEOUT => 5,
     ];
-    
-    // Add SSL for production (TiDB Cloud requires it)
+
+    // For production (TiDB Cloud) - Skip SSL verification (OK for testing)
     if (!$is_local) {
-        $options[PDO::MYSQL_ATTR_SSL_CA] = true;
         $options[PDO::MYSQL_ATTR_SSL_VERIFY_SERVER_CERT] = false;
     }
     

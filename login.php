@@ -2,14 +2,6 @@
 // login.php
 // Login page for RAYS OF GRACE Junior School
 
-// Enable error display TEMPORARILY for debugging
-ini_set('display_errors', 1);
-error_reporting(E_ALL);
-
-// Log that the file was accessed
-error_log("===== LOGIN.PHP ACCESSED =====");
-// ... rest of your login.php code
-
 require_once 'includes/config.php';
 require_once 'includes/auth.php';
 

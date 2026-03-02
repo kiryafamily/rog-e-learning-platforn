@@ -1,95 +1,132 @@
 <?php
 // includes/config.php
-// Database configuration for RAYS OF GRACE Junior School
+// Main configuration - Auto-detects environment
 
-// Database credentials
-define('DB_HOST', 'localhost');
-define('DB_NAME', 'raysofgrace_db');
-define('DB_USER', 'root'); // Change this to your database username
-define('DB_PASS', ''); // Change this to your database password
+// Prevent multiple inclusions
+if (defined('CONFIG_LOADED')) {
+    return;
+}
+define('CONFIG_LOADED', true);
 
-// Site configuration
+// Detect environment FIRST
+$is_local = in_array($_SERVER['SERVER_NAME'] ?? '', ['localhost', '127.0.0.1']);
+
+// ============================================
+// LOAD ENVIRONMENT-SPECIFIC DATABASE CREDENTIALS
+// ============================================
+if ($is_local) {
+    // LOCAL ENVIRONMENT - Load local config
+    require_once __DIR__ . '/config.local.php';
+} else {
+    // PRODUCTION ENVIRONMENT - Load production config
+    require_once __DIR__ . '/config.production.php';
+}
+
+// ============================================
+// SITE CONFIGURATION (Same for all environments)
+// ============================================
 define('SITE_NAME', 'RAYS OF GRACE Junior School');
-define('SITE_URL', 'https://www.raysofgrace.ac.ug');
 define('SITE_MOTTO', 'Knowledge Changing Lives Forever');
+define('SITE_URL', $is_local ? 'http://localhost/rog-e-learning-platform' : (getenv('SITE_URL') ?: 'https://' . ($_SERVER['HTTP_HOST'] ?? 'localhost')));
 
-// Payment configuration (Mobile Money)
-define('MTN_NUMBER', '256XXXXXXXXX'); // Replace with your MTN business number
-define('AIRTEL_NUMBER', '256XXXXXXXXX'); // Replace with your Airtel business number
+// Payment configuration
+define('MTN_NUMBER', '256XXXXXXXXX');
+define('AIRTEL_NUMBER', '256XXXXXXXXX');
 
 // Subscription prices (UGX)
 define('PRICE_MONTHLY', 100000);
 define('PRICE_TERMLY', 500000);
 define('PRICE_YEARLY', 1500000);
-define('FAMILY_DISCOUNT', 0.20); // 20% discount
+define('FAMILY_DISCOUNT', 0.20);
 
-// Establish database connection
+// ============================================
+// DATABASE CONNECTION
+// ============================================
 try {
-    $pdo = new PDO(
-        "mysql:host=" . DB_HOST . ";dbname=" . DB_NAME . ";charset=utf8mb4",
-        DB_USER,
-        DB_PASS,
-        [
-            PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
-            PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
-            PDO::ATTR_EMULATE_PREPARES => false
-        ]
-    );
+    // Validate that required constants are defined
+    if (!defined('DB_HOST') || !defined('DB_NAME') || !defined('DB_USER')) {
+        throw new Exception('Database configuration constants are not defined');
+    }
+    
+    // Build DSN with port if available
+    $dsn = "mysql:host=" . DB_HOST . ";dbname=" . DB_NAME . ";charset=utf8mb4";
+    
+    if (defined('DB_PORT') && DB_PORT) {
+        $dsn = "mysql:host=" . DB_HOST . ";port=" . DB_PORT . ";dbname=" . DB_NAME . ";charset=utf8mb4";
+    }
+    
+    // Connection options
+    $options = [
+        PDO::ATTR_ERRMODE => $is_local ? PDO::ERRMODE_EXCEPTION : PDO::ERRMODE_SILENT,
+        PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
+        PDO::ATTR_EMULATE_PREPARES => false,
+        PDO::ATTR_TIMEOUT => 5,
+    ];
+    
+    // Add SSL for production (TiDB Cloud requires it)
+    if (!$is_local) {
+        $options[PDO::MYSQL_ATTR_SSL_CA] = true;
+        $options[PDO::MYSQL_ATTR_SSL_VERIFY_SERVER_CERT] = false;
+    }
+    
+    $pdo = new PDO($dsn, DB_USER, DB_PASS, $options);
+    
 } catch (PDOException $e) {
-    die("Connection failed: " . $e->getMessage());
+    error_log("Database connection failed: " . $e->getMessage());
+    error_log("Host: " . (defined('DB_HOST') ? DB_HOST : 'undefined'));
+    error_log("Port: " . (defined('DB_PORT') ? DB_PORT : 'undefined'));
+    
+    if ($is_local) {
+        die("Connection failed: " . $e->getMessage());
+    } else {
+        die("Connection failed. Please try again later.");
+    }
+} catch (Exception $e) {
+    error_log("Configuration error: " . $e->getMessage());
+    die($is_local ? $e->getMessage() : "Configuration error. Please contact support.");
 }
 
-// Start session if not already started
+// ============================================
+// SESSION MANAGEMENT
+// ============================================
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 
-// Helper function to check if user is logged in
+// ============================================
+// HELPER FUNCTIONS
+// ============================================
 function isLoggedIn() {
     return isset($_SESSION['user_id']);
 }
 
-// Helper function to check if user is admin
 function isAdmin() {
     return isset($_SESSION['user_role']) && $_SESSION['user_role'] === 'admin';
 }
 
-// Helper function to get current user
 function getCurrentUser($pdo) {
     if (!isLoggedIn()) {
         return null;
     }
     
-    $stmt = $pdo->prepare("SELECT * FROM users WHERE id = ?");
-    $stmt->execute([$_SESSION['user_id']]);
-    return $stmt->fetch();
+    try {
+        $stmt = $pdo->prepare("SELECT * FROM users WHERE id = ?");
+        $stmt->execute([$_SESSION['user_id']]);
+        return $stmt->fetch();
+    } catch (PDOException $e) {
+        error_log("Error fetching current user: " . $e->getMessage());
+        return null;
+    }
 }
 
-// Helper function to format currency
 function formatCurrency($amount) {
     return 'UGX ' . number_format($amount, 0);
 }
 
-// Helper function to calculate family discount
 function calculateFamilyDiscount($numberOfChildren, $basePrice) {
     if ($numberOfChildren >= 2) {
         return $basePrice * (1 - FAMILY_DISCOUNT);
     }
     return $basePrice;
-}
-
-/**
- * Main Configuration - Auto-detects environment
- */
-
-// Detect if we're on localhost or production
-$is_local = in_array($_SERVER['SERVER_NAME'] ?? '', ['localhost', '127.0.0.1']);
-
-if ($is_local) {
-    // Load local development configuration
-    require_once __DIR__ . '/config.local.php';
-} else {
-    // Load production configuration (Render)
-    require_once __DIR__ . '/config.production.php';
 }
 ?>

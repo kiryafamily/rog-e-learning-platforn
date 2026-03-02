@@ -1,14 +1,12 @@
 <?php
-// Production configuration are ready
+// Production configuration - NO FALLBACK TO LOCALHOST!
 
-// Only define if not already defined
-if (!defined('DB_HOST')) define('DB_HOST', getenv('DB_HOST') ?: 'localhost');
+// ONLY use environment variables
+if (!defined('DB_HOST')) define('DB_HOST', getenv('DB_HOST'));
 if (!defined('DB_NAME')) define('DB_NAME', getenv('DB_NAME') ?: 'raysofgrace_db');
-if (!defined('DB_USER')) define('DB_USER', getenv('DB_USER') ?: '');
-if (!defined('DB_PASS')) define('DB_PASS', getenv('DB_PASS') ?: '');
-if (!defined('SITE_URL')) define('SITE_URL', getenv('SITE_URL') ?: 'https://' . ($_SERVER['HTTP_HOST'] ?? 'localhost'));
-if (!defined('SITE_NAME')) define('SITE_NAME', 'RAYS OF GRACE Junior School');
-if (!defined('DEBUG_MODE')) define('DEBUG_MODE', false);
+if (!defined('DB_USER')) define('DB_USER', getenv('DB_USER'));
+if (!defined('DB_PASS')) define('DB_PASS', getenv('DB_PASS'));
+if (!defined('DB_PORT')) define('DB_PORT', getenv('DB_PORT') ?: 4000);
 
 // Production error settings
 ini_set('display_errors', 0);

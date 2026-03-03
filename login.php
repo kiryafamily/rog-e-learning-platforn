@@ -1,6 +1,28 @@
 <?php
 // login.php
 // Login page for RAYS OF GRACE Junior School
+// login.php - Add this at the VERY TOP
+ini_set('display_errors', 1);
+error_reporting(E_ALL);
+
+require_once 'includes/config.php';
+
+echo "Step 1: Config loaded<br>";
+
+require_once 'includes/functions.php';
+echo "Step 2: Functions loaded<br>";
+
+// Check if sanitize function exists
+if (function_exists('sanitize')) {
+    echo "Step 3: sanitize() function exists<br>";
+} else {
+    echo "Step 3: ERROR - sanitize() function does NOT exist!<br>";
+    exit;
+}
+
+require_once 'includes/auth.php';
+echo "Step 4: Auth loaded<br>";
+
 ini_set('display_errors', 1);
 ini_set('display_startup_errors', 1);
 error_reporting(E_ALL);

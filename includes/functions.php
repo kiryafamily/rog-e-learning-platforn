@@ -2,7 +2,7 @@
 // includes/functions.php
 // Core functions for RAYS OF GRACE Junior School
 
-require_once 'config.php';
+// require_once 'config.php';
 
 /**
  * Sanitize input data

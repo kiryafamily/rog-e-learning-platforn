@@ -1,5 +1,6 @@
 <?php
 // admin/lessons.php - Complete Lesson Management for Admin
+// This page allows administrators to view, edit, and manage all lessons on the platform. It includes a modern design with a focus on usability and quick access to lesson details and actions.
 require_once '../includes/config.php';
 require_once '../includes/functions.php';
 require_once '../includes/auth.php';

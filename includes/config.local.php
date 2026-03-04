@@ -1,5 +1,6 @@
 <?php
 // Only define if not already defined
+// This allows for environment-specific overrides (e.g., config.local.php can override these settings without modifying the main config.php)
 if(!defined('DB_HOST')) {
     define('DB_HOST', 'localhost');
 }

@@ -1,5 +1,6 @@
 <?php
 // pricing.php - Complete Pricing Page with Smart Buttons
+// This page displays the pricing options for the subscription plans, highlighting the most popular termly plan. It checks if the user is logged in to determine whether to direct them to the checkout page or registration page when they click on a plan. The design is modern and visually appealing, with clear calls to action and detailed feature lists for each plan. Additionally, it includes a family discount section and an FAQ to address common questions about the subscription plans.
 require_once 'includes/config.php';
 require_once 'includes/functions.php';
 

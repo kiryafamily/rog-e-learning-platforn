@@ -1,5 +1,6 @@
 <?php
 // progress.php - Clean & Simple Version
+// This page displays the user's learning progress, including overall statistics, subject-wise progress, recent activity, and quiz performance. It checks if the user is logged in and retrieves the necessary data from the database to present a comprehensive progress report. The design is clean and focused on key metrics to help users track their learning journey effectively.
 require_once 'includes/config.php';
 require_once 'includes/functions.php';
 require_once 'includes/auth.php';

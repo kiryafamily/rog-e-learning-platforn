@@ -1,5 +1,6 @@
 <?php
 // admin/reply-ticket.php - AJAX endpoint for reply form
+// This file is used to load the reply form for a specific support ticket when an admin clicks "Reply" in the ticket details modal. It retrieves the ticket information and displays a form for the admin to enter their response and update the ticket status.
 require_once '../includes/config.php';
 require_once '../includes/auth.php';
 

@@ -17,7 +17,7 @@ if (empty($freeLessons)) {
         ['class' => 'P.7', 'subject' => 'Science', 'topic' => 'Electricity - How It Reaches Our Homes', 'description' => 'Understand hydroelectricity and transmission', 'icon' => 'fa-bolt']
     ];
 }
-?>
+?> 
 <!DOCTYPE html>
 <html lang="en">
 <head>

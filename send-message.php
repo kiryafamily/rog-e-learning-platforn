@@ -79,6 +79,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
     } else {
         // Store errors in session
+        //  
         $_SESSION['contact_errors'] = $errors;
         $_SESSION['contact_form_data'] = [
             'name' => $name,

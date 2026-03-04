@@ -1,5 +1,6 @@
 <?php
 // admin/index.php - STUNNING REDESIGN
+// This is the main dashboard page for administrators, providing an overview of key metrics, recent activity, and quick access to important sections of the admin panel. The design is modern and visually appealing, with a focus on usability and data visualization.
 require_once '../includes/config.php';
 require_once '../includes/functions.php';
 require_once '../includes/auth.php';

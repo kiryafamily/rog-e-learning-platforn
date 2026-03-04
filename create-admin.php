@@ -1,6 +1,7 @@
 <?php
 // create-admin.php - Place this in your raysofgrace folder
 // Run it once, then DELETE IT immediately!
+// This script creates a default admin user with the email
 
 // Connect to database
 $host = 'localhost';

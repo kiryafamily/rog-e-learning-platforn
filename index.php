@@ -474,6 +474,7 @@
         });
         
         // Subject tabs
+        // This function handles the tab switching for the subjects section. When a tab button is clicked, it updates the active state of the buttons and shows the corresponding subject grid while hiding the other. This allows users to easily switch between viewing subjects for lower primary (P.1-P.3) and upper primary (P.4-P.7) without needing to reload the page or navigate to a different section.
         function showSubjects(level) {
             // Update tab buttons
             document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));

@@ -1,5 +1,5 @@
 # robots.txt for RAYS OF GRACE Junior School
-# Knowledge Changing Lives Forever
+# Knowledge Changing Lives Forever 
 
 # Allow all bots to crawl the main site
 User-agent: *

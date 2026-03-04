@@ -1,6 +1,7 @@
 <?php
 // profile.php - STUNNING REDESIGN
 // User profile management with settings and preferences
+// This page allows users to view and edit their profile information, manage their subscription, and update their preferences. It includes a modern design with a profile header card, statistics, recent activity, and tabs for different settings sections. The page also checks the user's subscription status and displays relevant information about their plan and family members if applicable.
 
 require_once 'includes/config.php';
 require_once 'includes/functions.php';

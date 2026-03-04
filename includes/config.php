@@ -40,66 +40,60 @@ define('PRICE_YEARLY', 1500000);
 define('FAMILY_DISCOUNT', 0.20);
 
 // ============================================
-// DATABASE CONNECTION
+// DATABASE CONNECTION WITH DETAILED DEBUGGING
 // ============================================
 try {
-    // Validate required constants
-    if (!defined('DB_HOST') || empty(DB_HOST)) {
-        throw new Exception('DB_HOST is not defined or empty');
+    // Validate that required constants are defined
+    if (!defined('DB_HOST') || !defined('DB_NAME') || !defined('DB_USER')) {
+        throw new Exception('Database configuration constants are not defined');
     }
-    if (!defined('DB_NAME') || empty(DB_NAME)) {
-        throw new Exception('DB_NAME is not defined or empty');
-    }
-    if (!defined('DB_USER') || empty(DB_USER)) {
-        throw new Exception('DB_USER is not defined or empty');
-    }
-
+    
+    // Log connection parameters (temporarily)
+    error_log("===== DB CONNECTION ATTEMPT =====");
+    error_log("Host: " . DB_HOST);
+    error_log("Port: " . (defined('DB_PORT') ? DB_PORT : 'not defined'));
+    error_log("Database: " . DB_NAME);
+    error_log("User: " . DB_USER);
+    error_log("Environment: " . ($is_local ? 'LOCAL' : 'PRODUCTION'));
+    
     // Build DSN with port if available
     $dsn = "mysql:host=" . DB_HOST . ";dbname=" . DB_NAME . ";charset=utf8mb4";
     
-    // Add port if defined and not default
-    if (defined('DB_PORT') && DB_PORT != 3306) {
+    if (defined('DB_PORT') && DB_PORT) {
         $dsn = "mysql:host=" . DB_HOST . ";port=" . DB_PORT . ";dbname=" . DB_NAME . ";charset=utf8mb4";
     }
-
-    // Log connection attempt (without password)
-    error_log("Attempting database connection to host: " . DB_HOST . ", database: " . DB_NAME);
-
-    // Connection options with SSL for TiDB Cloud
+    
+    error_log("DSN: " . $dsn);
+    
+    // Connection options
     $options = [
-        PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+        PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION, // TEMPORARILY use EXCEPTION for debugging
         PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
         PDO::ATTR_EMULATE_PREPARES => false,
-        PDO::ATTR_TIMEOUT => 10,
-        // SSL is REQUIRED for TiDB Cloud
-        PDO::MYSQL_ATTR_SSL_CA => true,
-        PDO::MYSQL_ATTR_SSL_VERIFY_SERVER_CERT => false
+        PDO::ATTR_TIMEOUT => 5,
     ];
-
-    $pdo = new PDO($dsn, DB_USER, DB_PASS, $options);
     
-    // Test the connection
-    $pdo->query("SELECT 1");
-    error_log("Database connection successful to: " . DB_HOST);
+    // For production (TiDB Cloud)
+    if (!$is_local) {
+        // Skip SSL verification for now to test
+        $options[PDO::MYSQL_ATTR_SSL_VERIFY_SERVER_CERT] = false;
+        $options[PDO::MYSQL_ATTR_SSL_CA] = '';
+    }
+    
+    $pdo = new PDO($dsn, DB_USER, DB_PASS, $options);
+    error_log("✅ Database connection successful!");
     
 } catch (PDOException $e) {
-    // Log the detailed error
-    error_log("DATABASE CONNECTION FAILED: " . $e->getMessage());
-    error_log("DSN: " . ($dsn ?? 'Not built'));
-    error_log("Host: " . (defined('DB_HOST') ? DB_HOST : 'undefined'));
-    error_log("Port: " . (defined('DB_PORT') ? DB_PORT : '3306'));
-    error_log("Database: " . (defined('DB_NAME') ? DB_NAME : 'undefined'));
-    error_log("User: " . (defined('DB_USER') ? DB_USER : 'undefined'));
+    error_log("❌ PDOException: " . $e->getMessage());
+    error_log("Error code: " . $e->getCode());
+    error_log("File: " . $e->getFile() . " Line: " . $e->getLine());
     
-    // User-friendly message
-    if (isset($is_local) && $is_local) {
-        die("Connection failed: " . $e->getMessage());
-    } else {
-        die("We're experiencing technical difficulties. Please try again later.");
-    }
+    // Show the error temporarily for debugging
+    die("Database error: " . $e->getMessage() . " (Check Render logs for details)");
+    
 } catch (Exception $e) {
-    error_log("CONFIGURATION ERROR: " . $e->getMessage());
-    die($is_local ? $e->getMessage() : "Configuration error. Please contact support.");
+    error_log("❌ Exception: " . $e->getMessage());
+    die("Configuration error: " . $e->getMessage());
 }
 
 // ============================================

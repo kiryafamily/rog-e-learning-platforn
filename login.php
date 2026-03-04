@@ -5,6 +5,7 @@
 ini_set('display_errors', 1);
 error_reporting(E_ALL);
 
+require_once 'includes/db_keepalive.php';
 require_once 'includes/config.php';
 
 echo "Step 1: Config loaded<br>";
@@ -41,6 +42,15 @@ $success = '';
 
 // Handle login form submission
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+     // Verify connection is still alive
+    try {
+        $pdo->query("SELECT 1")->fetch();
+    } catch (PDOException $e) {
+        if ($e->getCode() == 2006) {
+            // Try to reconnect
+            require_once 'includes/config.php'; // Reload config to reconnect
+        }
+    }
     $email = $_POST['email'] ?? '';
     $password = $_POST['password'] ?? '';
     

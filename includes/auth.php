@@ -2,6 +2,9 @@
 // includes/auth.php
 // Authentication functions for RAYS OF GRACE Junior School
 
+// Add this debug line
+error_log("auth.php loaded - session status: " . session_status());
+
 require_once 'config.php';
 require_once 'functions.php';
 

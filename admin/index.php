@@ -679,6 +679,19 @@ $recent_lessons = $stmt->fetchAll();
                     </a>
                 </li>
                 <li>
+    <a href="tickets.php">
+        <i class="fas fa-ticket-alt"></i>
+        <span>Support Tickets</span>
+        <?php
+        // Optional: Show count of open tickets
+        $ticket_count = $pdo->query("SELECT COUNT(*) FROM support_tickets WHERE status = 'open'")->fetchColumn();
+        if ($ticket_count > 0) {
+            echo '<span style="background: #f44336; color: white; padding: 2px 8px; border-radius: 50px; font-size: 0.7rem; margin-left: auto;">' . $ticket_count . '</span>';
+        }
+        ?>
+    </a>
+</li>
+                <li>
                     <a href="settings.php">
                         <i class="fas fa-cog"></i>
                         <span>Settings</span>
@@ -786,6 +799,15 @@ $recent_lessons = $stmt->fetchAll();
             <i class="fas fa-envelope"></i>
             <span>View Messages</span>
         </a>
+        <a href="tickets.php" class="action-btn">
+    <i class="fas fa-ticket-alt"></i>
+    <span>View Tickets</span>
+    <?php
+    if ($ticket_count > 0) {
+        echo '<span style="background: #f44336; color: white; padding: 2px 6px; border-radius: 50%; font-size: 0.7rem; margin-left: 5px;">' . $ticket_count . '</span>';
+    }
+    ?>
+</a>
     </div>
 </div>
             <!-- Recent Activity -->

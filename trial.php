@@ -1,4 +1,5 @@
 <?php
+
 // trial.php - Redesigned Elegant Version
 require_once 'includes/config.php';
 require_once 'includes/functions.php';
@@ -686,23 +687,65 @@ if (empty($freeLessons)) {
         </div>
     </footer>
 
-    <script>
-        function showLesson(topic) {
-            document.getElementById('modalTitle').textContent = topic + ' - Preview';
-            document.getElementById('videoModal').classList.add('active');
-        }
+   <script>
+    // Store lesson data for better modal content
+    const lessons = <?php echo json_encode($freeLessons); ?>;
 
-        function closeModal() {
-            document.getElementById('videoModal').classList.remove('active');
+    function showLesson(topic) {
+        // Find the lesson data
+        const lesson = lessons.find(l => l.topic === topic);
+        
+        // Update modal title
+        document.getElementById('modalTitle').textContent = topic + ' - Preview';
+        
+        // Update modal body with more details
+        const modalBody = document.getElementById('modalBody');
+        if (lesson) {
+            modalBody.innerHTML = `
+                <div style="text-align: center;">
+                    <i class="fas fa-video" style="font-size: 4rem; color: #FFB800; margin-bottom: 20px;"></i>
+                    <h3 style="color: #4B1C3C; margin-bottom: 10px;">${lesson.topic}</h3>
+                    <p style="color: #666; margin-bottom: 15px;">
+                        <span style="background: #f0e8f0; padding: 3px 10px; border-radius: 4px;">${lesson.class}</span>
+                        <span style="background: #4B1C3C; color: white; padding: 3px 10px; border-radius: 4px; margin-left: 5px;">${lesson.subject}</span>
+                    </p>
+                    <p style="color: #666; margin-bottom: 20px;">${lesson.description}</p>
+                    <div style="background: #f5f5f5; padding: 15px; border-radius: 8px;">
+                        <i class="fas fa-info-circle" style="color: #FFB800;"></i>
+                        <p style="color: #666; margin-top: 5px;">This is a sample preview. Subscribe to access the complete video lesson.</p>
+                    </div>
+                </div>
+            `;
+        } else {
+            modalBody.innerHTML = `
+                <div class="video-placeholder">
+                    <i class="fas fa-video"></i>
+                    <p>Video preview coming soon!</p>
+                </div>
+            `;
         }
+        
+        // Show the modal
+        document.getElementById('videoModal').classList.add('active');
+    }
 
-        // Close modal when clicking outside
-        window.onclick = function(event) {
-            const modal = document.getElementById('videoModal');
-            if (event.target == modal) {
-                closeModal();
-            }
+    function closeModal() {
+        document.getElementById('videoModal').classList.remove('active');
+    }
+
+    // Close modal when clicking outside
+    window.onclick = function(event) {
+        const modal = document.getElementById('videoModal');
+        if (event.target == modal) {
+            closeModal();
         }
-    </script>
+    }
+
+    // Close modal with Escape key
+    document.addEventListener('keydown', function(event) {
+        if (event.key === 'Escape') {
+            closeModal();
+        }
+    });
 </body>
 </html>

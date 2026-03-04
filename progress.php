@@ -1,7 +1,5 @@
 <?php
-// progress.php
-// Comprehensive progress tracking with visual analytics
-
+// progress.php - Clean & Simple Version
 require_once 'includes/config.php';
 require_once 'includes/functions.php';
 require_once 'includes/auth.php';
@@ -13,15 +11,20 @@ if (!isLoggedIn()) {
 }
 
 $user = getCurrentUser($pdo);
-$viewAs = $_GET['student'] ?? $user['id'];
+$hasAccess = hasAccess($pdo, $user['id']);
 
-// Check if viewing as parent
-if ($viewAs != $user['id'] && $user['role'] === 'parent') {
+// Get selected student (for parents)
+$viewUserId = $user['id'];
+$viewUser = $user;
+
+if ($user['role'] === 'parent' && isset($_GET['student'])) {
     $stmt = $pdo->prepare("SELECT * FROM users WHERE id = ? AND family_id = ?");
-    $stmt->execute([$viewAs, $user['family_id']]);
+    $stmt->execute([$_GET['student'], $user['family_id']]);
     $student = $stmt->fetch();
-    if (!$student) {
-        $viewAs = $user['id'];
+    
+    if ($student) {
+        $viewUserId = $student['id'];
+        $viewUser = $student;
     }
 }
 
@@ -29,92 +32,115 @@ if ($viewAs != $user['id'] && $user['role'] === 'parent') {
 $stmt = $pdo->prepare("
     SELECT 
         COUNT(DISTINCT l.id) as total_lessons,
-        COUNT(DISTINCT p.lesson_id) as started_lessons,
-        SUM(CASE WHEN p.status = 'completed' THEN 1 ELSE 0 END) as completed_lessons,
-        COALESCE(AVG(p.progress), 0) as avg_progress
+        COUNT(DISTINCT CASE WHEN p.status = 'completed' THEN l.id END) as completed_lessons,
+        COALESCE(AVG(p.progress), 0) as avg_progress,
+        COUNT(DISTINCT l.subject) as total_subjects,
+        COUNT(DISTINCT CASE WHEN p.status = 'in_progress' THEN l.id END) as in_progress,
+        COUNT(DISTINCT CASE WHEN p.status = 'not_started' OR p.status IS NULL THEN l.id END) as not_started
     FROM lessons l
     LEFT JOIN progress p ON l.id = p.lesson_id AND p.user_id = ?
     WHERE l.class = (SELECT class FROM users WHERE id = ?)
 ");
-$stmt->execute([$viewAs, $viewAs]);
-$stats = $stmt->fetch();
+$stmt->execute([$viewUserId, $viewUserId]);
+$overallStats = $stmt->fetch();
 
 // Get subject-wise progress
 $stmt = $pdo->prepare("
     SELECT 
         l.subject,
         COUNT(DISTINCT l.id) as total,
-        SUM(CASE WHEN p.status = 'completed' THEN 1 ELSE 0 END) as completed,
-        COALESCE(AVG(p.progress), 0) as avg_progress
+        COUNT(DISTINCT CASE WHEN p.status = 'completed' THEN l.id END) as completed,
+        COALESCE(AVG(p.progress), 0) as avg_progress,
+        MAX(p.last_accessed) as last_accessed
     FROM lessons l
     LEFT JOIN progress p ON l.id = p.lesson_id AND p.user_id = ?
-    WHERE l.class = (SELECT class FROM users WHERE ?)
+    WHERE l.class = (SELECT class FROM users WHERE id = ?)
     GROUP BY l.subject
+    ORDER BY avg_progress DESC
 ");
-$stmt->execute([$viewAs, $viewAs]);
+$stmt->execute([$viewUserId, $viewUserId]);
 $subjectProgress = $stmt->fetchAll();
 
-// Get weekly progress (last 8 weeks)
-$weeklyData = [];
-for ($i = 7; $i >= 0; $i--) {
-    $weekStart = date('Y-m-d', strtotime("-$i weeks monday"));
-    $weekEnd = date('Y-m-d', strtotime("-$i weeks sunday"));
-    
-    $stmt = $pdo->prepare("
-        SELECT COUNT(*) as completed
-        FROM progress p
-        JOIN lessons l ON p.lesson_id = l.id
-        WHERE p.user_id = ? 
-        AND p.status = 'completed'
-        AND DATE(p.completed_at) BETWEEN ? AND ?
-    ");
-    $stmt->execute([$viewAs, $weekStart, $weekEnd]);
-    $weeklyData[] = [
-        'week' => "Week " . (8 - $i),
-        'completed' => $stmt->fetch()['completed']
-    ];
-}
+// Get weekly activity for chart
+$stmt = $pdo->prepare("
+    SELECT 
+        DATE(last_accessed) as date,
+        COUNT(*) as activities,
+        SUM(CASE WHEN status = 'completed' THEN 1 ELSE 0 END) as completed
+    FROM progress
+    WHERE user_id = ? 
+    AND last_accessed >= DATE_SUB(NOW(), INTERVAL 30 DAY)
+    GROUP BY DATE(last_accessed)
+    ORDER BY date
+");
+$stmt->execute([$viewUserId]);
+$weeklyActivity = $stmt->fetchAll();
+
+// Get recent completed lessons
+$stmt = $pdo->prepare("
+    SELECT l.*, p.completed_at, p.progress
+    FROM progress p
+    JOIN lessons l ON p.lesson_id = l.id
+    WHERE p.user_id = ? AND p.status = 'completed'
+    ORDER BY p.completed_at DESC
+    LIMIT 5
+");
+$stmt->execute([$viewUserId]);
+$recentCompleted = $stmt->fetchAll();
+
+// Get in-progress lessons
+$stmt = $pdo->prepare("
+    SELECT l.*, p.progress, p.last_accessed
+    FROM progress p
+    JOIN lessons l ON p.lesson_id = l.id
+    WHERE p.user_id = ? AND p.status = 'in_progress'
+    ORDER BY p.last_accessed DESC
+    LIMIT 5
+");
+$stmt->execute([$viewUserId]);
+$inProgressLessons = $stmt->fetchAll();
 
 // Get quiz performance
 $stmt = $pdo->prepare("
     SELECT 
         qr.*,
         l.topic,
-        l.subject
+        l.subject,
+        l.class
     FROM quiz_results qr
     JOIN lessons l ON qr.lesson_id = l.id
     WHERE qr.user_id = ?
     ORDER BY qr.created_at DESC
-    LIMIT 10
+    LIMIT 5
 ");
-$stmt->execute([$viewAs]);
-$recentQuizzes = $stmt->fetchAll();
+$stmt->execute([$viewUserId]);
+$quizResults = $stmt->fetchAll();
 
-// Get time spent (estimated)
-$stmt = $pdo->prepare("
-    SELECT SUM(TIMESTAMPDIFF(MINUTE, last_accessed, NOW())) as total_minutes
-    FROM progress
-    WHERE user_id = ? AND last_accessed IS NOT NULL
-");
-$stmt->execute([$viewAs]);
-$totalMinutes = $stmt->fetch()['total_minutes'] ?? 0;
-$hoursSpent = round($totalMinutes / 60, 1);
+// Calculate average quiz score
+$avgQuizScore = 0;
+if (!empty($quizResults)) {
+    $total = 0;
+    foreach ($quizResults as $q) {
+        $total += $q['percentage'];
+    }
+    $avgQuizScore = round($total / count($quizResults));
+}
 
-// Get streak (consecutive days)
+// Get learning streak
 $stmt = $pdo->prepare("
-    SELECT DATE(last_accessed) as access_date
+    SELECT DISTINCT DATE(last_accessed) as activity_date
     FROM progress
     WHERE user_id = ?
-    GROUP BY DATE(last_accessed)
-    ORDER BY access_date DESC
+    ORDER BY activity_date DESC
 ");
-$stmt->execute([$viewAs]);
-$accessDates = $stmt->fetchAll();
+$stmt->execute([$viewUserId]);
+$activityDates = $stmt->fetchAll();
 
 $streak = 0;
 $currentDate = date('Y-m-d');
-foreach ($accessDates as $index => $date) {
-    if ($date['access_date'] == $currentDate) {
+
+foreach ($activityDates as $index => $date) {
+    if ($date['activity_date'] == $currentDate) {
         $streak++;
         $currentDate = date('Y-m-d', strtotime($currentDate . ' -1 day'));
     } else {
@@ -122,780 +148,794 @@ foreach ($accessDates as $index => $date) {
     }
 }
 
-// Get recommendations based on weak areas
-$weakAreas = [];
-foreach ($subjectProgress as $subject) {
-    if ($subject['avg_progress'] < 50) {
-        $weakAreas[] = $subject['subject'];
-    }
-}
+// Calculate total learning time (estimated)
+$stmt = $pdo->prepare("
+    SELECT SUM(TIMESTAMPDIFF(MINUTE, last_accessed, NOW())) as total_minutes
+    FROM progress
+    WHERE user_id = ? AND last_accessed IS NOT NULL
+    LIMIT 100
+");
+$stmt->execute([$viewUserId]);
+$totalMinutes = $stmt->fetch()['total_minutes'] ?? 0;
+$totalHours = round($totalMinutes / 60, 1);
 ?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Learning Progress - RAYS OF GRACE</title>
+    <title>Progress Report - RAYS OF GRACE</title>
     <link rel="stylesheet" href="css/style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Poppins', sans-serif;
+        }
+
+        body {
+            background-color: #f5f5f5;
+        }
+
+        /* Navigation */
+        .dashboard-nav {
+            background-color: #ffffff;
+            padding: 15px 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .logo-area {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .logo-area img {
+            height: 40px;
+            width: auto;
+        }
+
+        .logo-area span {
+            font-size: 1.3rem;
+            font-weight: 600;
+            color: #4B1C3C;
+        }
+
+        .nav-right {
+            display: flex;
+            gap: 15px;
+        }
+
+        .btn-outline {
+            border: 2px solid #4B1C3C;
+            color: #4B1C3C;
+            padding: 8px 20px;
+            border-radius: 5px;
+            text-decoration: none;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            background-color: #ffffff;
+        }
+
+        .btn-outline:hover {
+            background-color: #4B1C3C;
+            color: #ffffff;
+        }
+
+        /* Main Container */
+        .progress-container {
+            max-width: 1400px;
+            margin: 30px auto;
+            padding: 0 20px;
+        }
+
+        /* Header */
+        .page-header {
+            background-color: #ffffff;
+            border-radius: 10px;
+            padding: 25px 30px;
+            margin-bottom: 25px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+
+        .page-header h1 {
+            color: #4B1C3C;
+            font-size: 1.8rem;
+        }
+
+        .page-header h1 i {
+            color: #FFB800;
+            margin-right: 10px;
+        }
+
+        .student-selector {
+            background-color: #f8f8f8;
+            padding: 8px 15px;
+            border-radius: 5px;
+            border: 1px solid #e0e0e0;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .student-selector select {
+            border: none;
+            background: transparent;
+            padding: 5px;
+            font-size: 0.95rem;
+            color: #4B1C3C;
+            font-weight: 500;
+            outline: none;
+        }
+
+        /* Stats Grid */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 20px;
+            margin-bottom: 25px;
+        }
+
+        .stat-card {
+            background-color: #ffffff;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            transition: transform 0.2s ease;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+
+        .stat-icon {
+            width: 50px;
+            height: 50px;
+            background-color: #f0e8f0;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .stat-icon i {
+            font-size: 1.5rem;
+            color: #FFB800;
+        }
+
+        .stat-info h3 {
+            font-size: 1.8rem;
+            font-weight: 600;
+            color: #4B1C3C;
+            line-height: 1.2;
+        }
+
+        .stat-info p {
+            color: #666;
+            font-size: 0.9rem;
+        }
+
+        /* Charts Row */
+        .charts-row {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 20px;
+            margin-bottom: 25px;
+        }
+
+        .chart-card {
+            background-color: #ffffff;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        }
+
+        .chart-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #f0f0f0;
+        }
+
+        .chart-header h3 {
+            color: #4B1C3C;
+            font-size: 1.1rem;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .chart-header i {
+            color: #FFB800;
+        }
+
+        /* Section Styles */
+        .section-card {
+            background-color: #ffffff;
+            border-radius: 10px;
+            padding: 25px;
+            margin-bottom: 25px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        }
+
+        .section-title {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #f0f0f0;
+        }
+
+        .section-title h2 {
+            color: #4B1C3C;
+            font-size: 1.2rem;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .section-title i {
+            color: #FFB800;
+        }
+
+        /* Subject Grid */
+        .subject-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 15px;
+        }
+
+        .subject-item {
+            background-color: #f8f8f8;
+            border-radius: 8px;
+            padding: 15px;
+        }
+
+        .subject-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .subject-name {
+            font-weight: 600;
+            color: #4B1C3C;
+        }
+
+        .subject-percentage {
+            color: #FFB800;
+            font-weight: 600;
+        }
+
+        .progress-bar {
+            height: 6px;
+            background-color: #e0e0e0;
+            border-radius: 3px;
+            overflow: hidden;
+            margin-bottom: 10px;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background-color: #4B1C3C;
+            border-radius: 3px;
+        }
+
+        .subject-stats {
+            display: flex;
+            justify-content: space-between;
+            color: #999;
+            font-size: 0.85rem;
+        }
+
+        /* Lessons Grid */
+        .lessons-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 25px;
+        }
+
+        .lesson-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 0;
+            border-bottom: 1px solid #f0f0f0;
+        }
+
+        .lesson-item:last-child {
+            border-bottom: none;
+        }
+
+        .lesson-icon {
+            width: 40px;
+            height: 40px;
+            background-color: #f0e8f0;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .lesson-icon i {
+            color: #FFB800;
+        }
+
+        .lesson-info {
+            flex: 1;
+        }
+
+        .lesson-info h4 {
+            color: #333;
+            font-size: 0.95rem;
+            margin-bottom: 3px;
+        }
+
+        .lesson-info p {
+            color: #999;
+            font-size: 0.8rem;
+        }
+
+        .badge {
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+
+        .badge.completed {
+            background-color: #e8f5e9;
+            color: #4CAF50;
+        }
+
+        .badge.progress {
+            background-color: #fff3e0;
+            color: #FF9800;
+        }
+
+        /* Quiz Grid */
+        .quiz-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 15px;
+            margin-top: 15px;
+        }
+
+        .quiz-item {
+            background-color: #f8f8f8;
+            border-radius: 8px;
+            padding: 15px;
+        }
+
+        .quiz-score {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: #4B1C3C;
+            margin-bottom: 5px;
+        }
+
+        .quiz-score small {
+            font-size: 0.85rem;
+            color: #999;
+            font-weight: normal;
+        }
+
+        .quiz-date {
+            color: #999;
+            font-size: 0.75rem;
+            margin-top: 5px;
+        }
+
+        /* Download Button */
+        .download-btn {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            background-color: #4B1C3C;
+            color: #ffffff;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            transition: all 0.3s ease;
+            z-index: 1000;
+        }
+
+        .download-btn:hover {
+            background-color: #2F1224;
+            transform: scale(1.1);
+        }
+
+        .download-btn i {
+            font-size: 1.2rem;
+        }
+
+        /* No Data */
+        .no-data {
+            text-align: center;
+            padding: 40px 20px;
+            color: #999;
+        }
+
+        .no-data i {
+            font-size: 2.5rem;
+            color: #FFB800;
+            margin-bottom: 10px;
+        }
+
+        /* Responsive */
+        @media (max-width: 992px) {
+            .stats-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            
+            .charts-row {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .lessons-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .page-header {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+        }
+    </style>
 </head>
 <body>
     <!-- Navigation -->
     <nav class="dashboard-nav">
-        <div class="container">
-            <div class="nav-left">
-                <div class="logo">
-                    <img src="images/logo.png" alt="RAYS OF GRACE">
-                    <span>Learning Progress</span>
-                </div>
-            </div>
-            <div class="nav-right">
-                <?php if ($user['role'] === 'parent' && $viewAs != $user['id']): ?>
-                <a href="progress.php" class="btn btn-outline btn-small">
-                    <i class="fas fa-user"></i> My Progress
-                </a>
-                <?php endif; ?>
-                <a href="dashboard.php" class="btn btn-outline btn-small">
-                    <i class="fas fa-tachometer-alt"></i> Dashboard
-                </a>
-            </div>
+        <div class="logo-area">
+            <img src="images/logo.png" alt="RAYS OF GRACE">
+            <span>Progress Report</span>
+        </div>
+        <div class="nav-right">
+            <a href="dashboard.php" class="btn-outline">
+                <i class="fas fa-tachometer-alt"></i> Dashboard
+            </a>
         </div>
     </nav>
 
     <div class="progress-container">
-        <!-- Student Selector (for parents) -->
-        <?php if ($user['role'] === 'parent'): 
-            $stmt = $pdo->prepare("SELECT * FROM users WHERE family_id = ? AND role = 'student'");
-            $stmt->execute([$user['family_id']]);
-            $students = $stmt->fetchAll();
-        ?>
-        <div class="student-selector">
-            <span><i class="fas fa-users"></i> Viewing progress for:</span>
-            <select onchange="location.href='progress.php?student=' + this.value">
-                <?php foreach ($students as $student): ?>
-                <option value="<?php echo $student['id']; ?>" <?php echo $viewAs == $student['id'] ? 'selected' : ''; ?>>
-                    <?php echo htmlspecialchars($student['fullname']); ?> (<?php echo $student['class']; ?>)
-                </option>
-                <?php endforeach; ?>
-            </select>
-        </div>
-        <?php endif; ?>
-
-        <!-- Welcome Section -->
-        <div class="welcome-progress">
-            <h1>Your Learning Journey</h1>
-            <p class="streak-info">
-                <i class="fas fa-fire" style="color: #FFB800;"></i>
-                <strong><?php echo $streak; ?> day streak!</strong> Keep it up!
-            </p>
-        </div>
-
-        <!-- Key Metrics -->
-        <div class="metrics-grid">
-            <div class="metric-card">
-                <div class="metric-icon" style="background: rgba(75, 28, 60, 0.1);">
-                    <i class="fas fa-check-circle" style="color: #4B1C3C;"></i>
-                </div>
-                <div class="metric-content">
-                    <span class="metric-value"><?php echo $stats['completed_lessons']; ?>/<?php echo $stats['total_lessons']; ?></span>
-                    <span class="metric-label">Lessons Completed</span>
-                    <div class="mini-progress">
-                        <div class="mini-bar" style="width: <?php echo ($stats['completed_lessons'] / max($stats['total_lessons'], 1)) * 100; ?>%"></div>
-                    </div>
-                </div>
-            </div>
+        <!-- Page Header -->
+        <div class="page-header">
+            <h1>
+                <i class="fas fa-chart-line"></i>
+                Learning Progress
+            </h1>
             
-            <div class="metric-card">
-                <div class="metric-icon" style="background: rgba(255, 184, 0, 0.1);">
-                    <i class="fas fa-clock" style="color: #FFB800;"></i>
-                </div>
-                <div class="metric-content">
-                    <span class="metric-value"><?php echo $hoursSpent; ?> hrs</span>
-                    <span class="metric-label">Time Spent Learning</span>
-                </div>
-            </div>
-            
-            <div class="metric-card">
-                <div class="metric-icon" style="background: rgba(76, 175, 80, 0.1);">
-                    <i class="fas fa-star" style="color: #4CAF50;"></i>
-                </div>
-                <div class="metric-content">
+            <?php if ($user['role'] === 'parent'): ?>
+            <div class="student-selector">
+                <i class="fas fa-user-graduate" style="color: #FFB800;"></i>
+                <select onchange="location.href='?student=' + this.value">
+                    <option value="<?php echo $user['id']; ?>">My Progress</option>
                     <?php
-                    $avgQuiz = 0;
-                    if (!empty($recentQuizzes)) {
-                        $sum = array_sum(array_column($recentQuizzes, 'percentage'));
-                        $avgQuiz = round($sum / count($recentQuizzes));
-                    }
+                    $stmt = $pdo->prepare("SELECT * FROM users WHERE family_id = ? AND role = 'student'");
+                    $stmt->execute([$user['family_id']]);
+                    $students = $stmt->fetchAll();
+                    foreach ($students as $student):
                     ?>
-                    <span class="metric-value"><?php echo $avgQuiz; ?>%</span>
-                    <span class="metric-label">Average Quiz Score</span>
+                    <option value="<?php echo $student['id']; ?>" <?php echo $viewUserId == $student['id'] ? 'selected' : ''; ?>>
+                        <?php echo htmlspecialchars($student['fullname']); ?> (<?php echo $student['class']; ?>)
+                    </option>
+                    <?php endforeach; ?>
+                </select>
+            </div>
+            <?php endif; ?>
+        </div>
+
+        <!-- Stats Cards -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-icon">
+                    <i class="fas fa-book-open"></i>
+                </div>
+                <div class="stat-info">
+                    <h3><?php echo $overallStats['completed_lessons'] ?? 0; ?>/<?php echo $overallStats['total_lessons'] ?? 0; ?></h3>
+                    <p>Lessons Completed</p>
                 </div>
             </div>
-            
-            <div class="metric-card">
-                <div class="metric-icon" style="background: rgba(33, 150, 243, 0.1);">
-                    <i class="fas fa-tachometer-alt" style="color: #2196F3;"></i>
+
+            <div class="stat-card">
+                <div class="stat-icon">
+                    <i class="fas fa-star"></i>
                 </div>
-                <div class="metric-content">
-                    <span class="metric-value"><?php echo round($stats['avg_progress']); ?>%</span>
-                    <span class="metric-label">Overall Progress</span>
+                <div class="stat-info">
+                    <h3><?php echo $avgQuizScore; ?>%</h3>
+                    <p>Average Quiz Score</p>
+                </div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-icon">
+                    <i class="fas fa-fire"></i>
+                </div>
+                <div class="stat-info">
+                    <h3><?php echo $streak; ?></h3>
+                    <p>Day Streak</p>
+                </div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-icon">
+                    <i class="fas fa-clock"></i>
+                </div>
+                <div class="stat-info">
+                    <h3><?php echo $totalHours; ?>h</h3>
+                    <p>Learning Time</p>
                 </div>
             </div>
         </div>
 
-        <!-- Progress Charts -->
-        <div class="charts-grid">
-            <!-- Subject Progress Chart -->
+        <!-- Charts -->
+        <div class="charts-row">
             <div class="chart-card">
-                <h3><i class="fas fa-chart-pie"></i> Progress by Subject</h3>
-                <canvas id="subjectChart" width="400" height="300"></canvas>
+                <div class="chart-header">
+                    <h3><i class="fas fa-calendar-week"></i> Last 30 Days Activity</h3>
+                </div>
+                <canvas id="activityChart" height="200"></canvas>
             </div>
-            
-            <!-- Weekly Progress Chart -->
+
             <div class="chart-card">
-                <h3><i class="fas fa-chart-line"></i> Weekly Activity</h3>
-                <canvas id="weeklyChart" width="400" height="300"></canvas>
+                <div class="chart-header">
+                    <h3><i class="fas fa-chart-pie"></i> Overall Progress</h3>
+                </div>
+                <canvas id="progressChart" height="200"></canvas>
             </div>
         </div>
 
-        <!-- Subject Progress Details -->
-        <div class="subject-details">
-            <h3><i class="fas fa-list"></i> Subject Breakdown</h3>
-            <div class="subject-table">
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Subject</th>
-                            <th>Progress</th>
-                            <th>Completed</th>
-                            <th>Total</th>
-                            <th>Status</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <?php foreach ($subjectProgress as $subject): 
-                            $progressPercent = round($subject['avg_progress']);
-                            $status = $progressPercent >= 80 ? 'Excellent' : ($progressPercent >= 50 ? 'Good' : 'Needs Work');
-                            $statusColor = $progressPercent >= 80 ? '#4CAF50' : ($progressPercent >= 50 ? '#FFB800' : '#f44336');
-                        ?>
-                        <tr>
-                            <td><strong><?php echo $subject['subject']; ?></strong></td>
-                            <td>
-                                <div class="table-progress">
-                                    <div class="progress-bar">
-                                        <div class="progress-fill" style="width: <?php echo $progressPercent; ?>%; background: <?php echo $statusColor; ?>"></div>
-                                    </div>
-                                    <span><?php echo $progressPercent; ?>%</span>
-                                </div>
-                            </td>
-                            <td><?php echo $subject['completed']; ?></td>
-                            <td><?php echo $subject['total']; ?></td>
-                            <td style="color: <?php echo $statusColor; ?>"><?php echo $status; ?></td>
-                        </tr>
-                        <?php endforeach; ?>
-                    </tbody>
-                </table>
+        <!-- Subject Progress -->
+        <div class="section-card">
+            <div class="section-title">
+                <h2><i class="fas fa-book"></i> Subject Progress</h2>
+                <span style="color: #999;"><?php echo count($subjectProgress); ?> subjects</span>
             </div>
+
+            <?php if (empty($subjectProgress)): ?>
+                <div class="no-data">
+                    <i class="fas fa-chart-line"></i>
+                    <p>No progress data yet. Start learning to see your progress!</p>
+                </div>
+            <?php else: ?>
+                <div class="subject-grid">
+                    <?php foreach ($subjectProgress as $subject): ?>
+                    <div class="subject-item">
+                        <div class="subject-header">
+                            <span class="subject-name"><?php echo $subject['subject']; ?></span>
+                            <span class="subject-percentage"><?php echo round($subject['avg_progress']); ?>%</span>
+                        </div>
+                        <div class="progress-bar">
+                            <div class="progress-fill" style="width: <?php echo $subject['avg_progress']; ?>%"></div>
+                        </div>
+                        <div class="subject-stats">
+                            <span><?php echo $subject['completed']; ?>/<?php echo $subject['total']; ?> lessons</span>
+                            <?php if ($subject['last_accessed']): ?>
+                            <span><?php echo timeAgo($subject['last_accessed']); ?></span>
+                            <?php endif; ?>
+                        </div>
+                    </div>
+                    <?php endforeach; ?>
+                </div>
+            <?php endif; ?>
         </div>
 
-        <!-- Recent Quiz Results -->
-        <div class="recent-quizzes">
-            <h3><i class="fas fa-question-circle"></i> Recent Quiz Performance</h3>
-            <div class="quiz-timeline">
-                <?php if (empty($recentQuizzes)): ?>
-                    <p class="no-data">No quizzes taken yet. Start learning and test your knowledge!</p>
+        <!-- Lessons in Progress & Recent Completions -->
+        <div class="lessons-grid">
+            <!-- In Progress -->
+            <div class="section-card">
+                <div class="section-title">
+                    <h2><i class="fas fa-spinner"></i> In Progress</h2>
+                    <span style="color: #FF9800;"><?php echo count($inProgressLessons); ?></span>
+                </div>
+
+                <?php if (empty($inProgressLessons)): ?>
+                    <div class="no-data">
+                        <i class="fas fa-play-circle"></i>
+                        <p>No lessons in progress</p>
+                    </div>
                 <?php else: ?>
-                    <?php foreach ($recentQuizzes as $quiz): ?>
-                    <div class="quiz-item">
-                        <div class="quiz-score <?php echo $quiz['percentage'] >= 50 ? 'passed' : 'failed'; ?>">
-                            <?php echo round($quiz['percentage']); ?>%
+                    <?php foreach ($inProgressLessons as $lesson): ?>
+                    <div class="lesson-item">
+                        <div class="lesson-icon">
+                            <i class="fas fa-play"></i>
                         </div>
-                        <div class="quiz-info">
-                            <h4><?php echo htmlspecialchars($quiz['topic']); ?></h4>
-                            <p><?php echo $quiz['subject']; ?> • <?php echo date('d M Y', strtotime($quiz['created_at'])); ?></p>
+                        <div class="lesson-info">
+                            <h4><?php echo htmlspecialchars($lesson['topic']); ?></h4>
+                            <p><?php echo $lesson['class']; ?> • <?php echo $lesson['subject']; ?></p>
                         </div>
-                        <div class="quiz-detail">
-                            <span><?php echo $quiz['score']; ?>/<?php echo $quiz['total']; ?> correct</span>
-                            <a href="quiz-results.php?id=<?php echo $quiz['id']; ?>" class="btn-text">
-                                Details <i class="fas fa-arrow-right"></i>
-                            </a>
+                        <span class="badge progress"><?php echo $lesson['progress']; ?>%</span>
+                    </div>
+                    <?php endforeach; ?>
+                <?php endif; ?>
+            </div>
+
+            <!-- Recently Completed -->
+            <div class="section-card">
+                <div class="section-title">
+                    <h2><i class="fas fa-check-circle"></i> Completed</h2>
+                    <span style="color: #4CAF50;"><?php echo count($recentCompleted); ?></span>
+                </div>
+
+                <?php if (empty($recentCompleted)): ?>
+                    <div class="no-data">
+                        <i class="fas fa-trophy"></i>
+                        <p>No completed lessons yet</p>
+                    </div>
+                <?php else: ?>
+                    <?php foreach ($recentCompleted as $lesson): ?>
+                    <div class="lesson-item">
+                        <div class="lesson-icon">
+                            <i class="fas fa-check-circle" style="color: #4CAF50;"></i>
                         </div>
+                        <div class="lesson-info">
+                            <h4><?php echo htmlspecialchars($lesson['topic']); ?></h4>
+                            <p><?php echo $lesson['class']; ?> • <?php echo $lesson['subject']; ?></p>
+                        </div>
+                        <span class="badge completed">Done</span>
                     </div>
                     <?php endforeach; ?>
                 <?php endif; ?>
             </div>
         </div>
 
-        <!-- Recommendations -->
-        <?php if (!empty($weakAreas)): ?>
-        <div class="recommendations">
-            <h3><i class="fas fa-lightbulb"></i> Recommended for You</h3>
-            <div class="rec-cards">
-                <?php foreach ($weakAreas as $area): 
-                    // Get a lesson from this subject
-                    $stmt = $pdo->prepare("
-                        SELECT * FROM lessons 
-                        WHERE class = (SELECT class FROM users WHERE id = ?) 
-                        AND subject = ?
-                        ORDER BY RAND() LIMIT 1
-                    ");
-                    $stmt->execute([$viewAs, $area]);
-                    $lesson = $stmt->fetch();
-                    if ($lesson):
-                ?>
-                <div class="rec-card">
-                    <div class="rec-header">
-                        <span class="rec-subject"><?php echo $area; ?></span>
-                        <span class="rec-priority">Needs Attention</span>
-                    </div>
-                    <h4><?php echo htmlspecialchars($lesson['topic']); ?></h4>
-                    <p>Week <?php echo $lesson['week']; ?> • <?php echo $lesson['duration']; ?></p>
-                    <a href="lesson-view.php?id=<?php echo $lesson['id']; ?>" class="btn btn-primary btn-small">
-                        Review Now
-                    </a>
-                </div>
-                <?php 
-                    endif;
-                endforeach; 
-                ?>
+        <!-- Quiz Results -->
+        <div class="section-card">
+            <div class="section-title">
+                <h2><i class="fas fa-question-circle"></i> Recent Quizzes</h2>
+                <span style="color: #FFB800;">Avg: <?php echo $avgQuizScore; ?>%</span>
             </div>
-        </div>
-        <?php endif; ?>
 
-        <!-- Achievement Badges -->
-        <div class="achievements">
-            <h3><i class="fas fa-trophy"></i> Achievements</h3>
-            <div class="badges-grid">
-                <?php
-                $badges = [
-                    [
-                        'icon' => 'fa-rocket',
-                        'name' => 'First Lesson',
-                        'description' => 'Completed your first lesson',
-                        'earned' => $stats['completed_lessons'] > 0
-                    ],
-                    [
-                        'icon' => 'fa-star',
-                        'name' => 'Quick Learner',
-                        'description' => 'Completed 10 lessons',
-                        'earned' => $stats['completed_lessons'] >= 10
-                    ],
-                    [
-                        'icon' => 'fa-brain',
-                        'name' => 'Quiz Master',
-                        'description' => 'Scored 100% on a quiz',
-                        'earned' => in_array(100, array_column($recentQuizzes, 'percentage'))
-                    ],
-                    [
-                        'icon' => 'fa-fire',
-                        'name' => 'On Fire',
-                        'description' => '7-day learning streak',
-                        'earned' => $streak >= 7
-                    ],
-                    [
-                        'icon' => 'fa-clock',
-                        'name' => 'Dedicated',
-                        'description' => 'Spent 10+ hours learning',
-                        'earned' => $hoursSpent >= 10
-                    ],
-                    [
-                        'icon' => 'fa-trophy',
-                        'name' => 'All-Star',
-                        'description' => 'Completed all lessons',
-                        'earned' => $stats['completed_lessons'] == $stats['total_lessons']
-                    ]
-                ];
-                ?>
-                
-                <?php foreach ($badges as $badge): ?>
-                <div class="badge-card <?php echo $badge['earned'] ? 'earned' : 'locked'; ?>">
-                    <div class="badge-icon">
-                        <i class="fas <?php echo $badge['icon']; ?>"></i>
-                    </div>
-                    <h4><?php echo $badge['name']; ?></h4>
-                    <p><?php echo $badge['description']; ?></p>
-                    <?php if (!$badge['earned']): ?>
-                    <span class="badge-lock"><i class="fas fa-lock"></i> Locked</span>
-                    <?php endif; ?>
+            <?php if (empty($quizResults)): ?>
+                <div class="no-data">
+                    <i class="fas fa-question"></i>
+                    <p>No quizzes taken yet</p>
                 </div>
-                <?php endforeach; ?>
-            </div>
-        </div>
-
-        <!-- Export Options -->
-        <div class="export-section">
-            <h3>Export Your Progress</h3>
-            <div class="export-buttons">
-                <button class="btn btn-outline" onclick="exportProgress('pdf')">
-                    <i class="fas fa-file-pdf"></i> Download PDF Report
-                </button>
-                <button class="btn btn-outline" onclick="exportProgress('csv')">
-                    <i class="fas fa-file-csv"></i> Export as CSV
-                </button>
-                <button class="btn btn-outline" onclick="printProgress()">
-                    <i class="fas fa-print"></i> Print Report
-                </button>
-            </div>
+            <?php else: ?>
+                <div class="quiz-grid">
+                    <?php foreach ($quizResults as $quiz): ?>
+                    <div class="quiz-item">
+                        <div class="quiz-score">
+                            <?php echo round($quiz['percentage']); ?>%
+                            <small>/<?php echo $quiz['total']; ?></small>
+                        </div>
+                        <h4 style="color: #4B1C3C; font-size: 0.95rem;"><?php echo htmlspecialchars($quiz['topic']); ?></h4>
+                        <p style="color: #666; font-size: 0.8rem;"><?php echo $quiz['class']; ?> • <?php echo $quiz['subject']; ?></p>
+                        <div class="quiz-date">
+                            <i class="far fa-clock"></i> <?php echo timeAgo($quiz['created_at']); ?>
+                        </div>
+                    </div>
+                    <?php endforeach; ?>
+                </div>
+            <?php endif; ?>
         </div>
     </div>
 
-    <style>
-    .progress-container {
-        max-width: 1200px;
-        margin: 0 auto;
-        padding: 30px 20px;
-    }
-    
-    .student-selector {
-        background: white;
-        padding: 15px 20px;
-        border-radius: 10px;
-        margin-bottom: 30px;
-        display: flex;
-        align-items: center;
-        gap: 15px;
-        box-shadow: 0 2px 5px rgba(0,0,0,0.05);
-    }
-    
-    .student-selector select {
-        padding: 8px 15px;
-        border: 1px solid #E0E0E0;
-        border-radius: 5px;
-        font-size: 1rem;
-        color: #4B1C3C;
-        font-weight: 500;
-    }
-    
-    .welcome-progress {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: 30px;
-    }
-    
-    .welcome-progress h1 {
-        color: #4B1C3C;
-        margin: 0;
-    }
-    
-    .streak-info {
-        background: white;
-        padding: 10px 20px;
-        border-radius: 50px;
-        box-shadow: 0 2px 5px rgba(0,0,0,0.05);
-    }
-    
-    .metrics-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-        gap: 20px;
-        margin-bottom: 30px;
-    }
-    
-    .metric-card {
-        background: white;
-        padding: 20px;
-        border-radius: 10px;
-        display: flex;
-        align-items: center;
-        gap: 15px;
-        box-shadow: 0 2px 5px rgba(0,0,0,0.05);
-    }
-    
-    .metric-icon {
-        width: 50px;
-        height: 50px;
-        border-radius: 10px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-    }
-    
-    .metric-icon i {
-        font-size: 1.5rem;
-    }
-    
-    .metric-content {
-        flex: 1;
-    }
-    
-    .metric-value {
-        display: block;
-        font-size: 1.5rem;
-        font-weight: 700;
-        color: #333;
-        line-height: 1.2;
-    }
-    
-    .metric-label {
-        color: #666;
-        font-size: 0.9rem;
-    }
-    
-    .mini-progress {
-        height: 4px;
-        background: #F0F0F0;
-        border-radius: 2px;
-        margin-top: 8px;
-    }
-    
-    .mini-bar {
-        height: 100%;
-        background: #4B1C3C;
-        border-radius: 2px;
-    }
-    
-    .charts-grid {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 30px;
-        margin-bottom: 30px;
-    }
-    
-    .chart-card {
-        background: white;
-        padding: 20px;
-        border-radius: 10px;
-        box-shadow: 0 2px 5px rgba(0,0,0,0.05);
-    }
-    
-    .chart-card h3 {
-        color: #4B1C3C;
-        margin-bottom: 20px;
-        display: flex;
-        align-items: center;
-        gap: 10px;
-    }
-    
-    .chart-card h3 i {
-        color: #FFB800;
-    }
-    
-    .subject-details,
-    .recent-quizzes,
-    .recommendations,
-    .achievements,
-    .export-section {
-        background: white;
-        padding: 25px;
-        border-radius: 10px;
-        margin-bottom: 30px;
-        box-shadow: 0 2px 5px rgba(0,0,0,0.05);
-    }
-    
-    .subject-details h3,
-    .recent-quizzes h3,
-    .recommendations h3,
-    .achievements h3 {
-        color: #4B1C3C;
-        margin-bottom: 20px;
-        display: flex;
-        align-items: center;
-        gap: 10px;
-    }
-    
-    .subject-details h3 i,
-    .recent-quizzes h3 i,
-    .recommendations h3 i,
-    .achievements h3 i {
-        color: #FFB800;
-    }
-    
-    .subject-table {
-        overflow-x: auto;
-    }
-    
-    .subject-table table {
-        width: 100%;
-        border-collapse: collapse;
-    }
-    
-    .subject-table th {
-        text-align: left;
-        padding: 12px;
-        background: #F5F5F5;
-        color: #4B1C3C;
-        font-weight: 600;
-    }
-    
-    .subject-table td {
-        padding: 12px;
-        border-bottom: 1px solid #F0F0F0;
-    }
-    
-    .table-progress {
-        display: flex;
-        align-items: center;
-        gap: 10px;
-    }
-    
-    .table-progress .progress-bar {
-        flex: 1;
-        height: 8px;
-        background: #F0F0F0;
-        border-radius: 4px;
-    }
-    
-    .progress-fill {
-        height: 100%;
-        border-radius: 4px;
-    }
-    
-    .quiz-timeline {
-        display: flex;
-        flex-direction: column;
-        gap: 15px;
-    }
-    
-    .quiz-item {
-        display: flex;
-        align-items: center;
-        gap: 20px;
-        padding: 15px;
-        background: #F9F9F9;
-        border-radius: 5px;
-    }
-    
-    .quiz-score {
-        width: 60px;
-        height: 60px;
-        border-radius: 50%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-weight: 700;
-        font-size: 1.2rem;
-    }
-    
-    .quiz-score.passed {
-        background: #E8F5E9;
-        color: #4CAF50;
-    }
-    
-    .quiz-score.failed {
-        background: #FFEBEE;
-        color: #f44336;
-    }
-    
-    .quiz-info {
-        flex: 1;
-    }
-    
-    .quiz-info h4 {
-        margin-bottom: 3px;
-        color: #333;
-    }
-    
-    .quiz-info p {
-        color: #999;
-        font-size: 0.9rem;
-    }
-    
-    .quiz-detail {
-        text-align: right;
-    }
-    
-    .quiz-detail span {
-        display: block;
-        color: #666;
-        margin-bottom: 5px;
-    }
-    
-    .rec-cards {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-        gap: 20px;
-    }
-    
-    .rec-card {
-        background: #F9F9F9;
-        padding: 20px;
-        border-radius: 5px;
-        border-left: 4px solid #f44336;
-    }
-    
-    .rec-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: 10px;
-    }
-    
-    .rec-subject {
-        font-weight: 600;
-        color: #4B1C3C;
-    }
-    
-    .rec-priority {
-        background: #f44336;
-        color: white;
-        padding: 2px 8px;
-        border-radius: 3px;
-        font-size: 0.8rem;
-    }
-    
-    .badges-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-        gap: 20px;
-    }
-    
-    .badge-card {
-        text-align: center;
-        padding: 20px;
-        background: #F9F9F9;
-        border-radius: 10px;
-        position: relative;
-    }
-    
-    .badge-card.earned .badge-icon {
-        background: #FFB800;
-        color: #4B1C3C;
-    }
-    
-    .badge-card.locked {
-        opacity: 0.6;
-    }
-    
-    .badge-card.locked .badge-icon {
-        background: #E0E0E0;
-        color: #999;
-    }
-    
-    .badge-icon {
-        width: 60px;
-        height: 60px;
-        border-radius: 50%;
-        margin: 0 auto 15px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 1.5rem;
-    }
-    
-    .badge-card h4 {
-        color: #333;
-        margin-bottom: 5px;
-        font-size: 1rem;
-    }
-    
-    .badge-card p {
-        color: #666;
-        font-size: 0.8rem;
-        margin-bottom: 10px;
-    }
-    
-    .badge-lock {
-        color: #999;
-        font-size: 0.8rem;
-    }
-    
-    .export-buttons {
-        display: flex;
-        gap: 15px;
-        margin-top: 15px;
-        flex-wrap: wrap;
-    }
-    
-    .no-data {
-        color: #999;
-        text-align: center;
-        padding: 30px;
-    }
-    
-    @media (max-width: 768px) {
-        .charts-grid {
-            grid-template-columns: 1fr;
-        }
-        
-        .welcome-progress {
-            flex-direction: column;
-            align-items: flex-start;
-            gap: 15px;
-        }
-        
-        .quiz-item {
-            flex-direction: column;
-            text-align: center;
-        }
-        
-        .quiz-detail {
-            text-align: center;
-        }
-        
-        .export-buttons {
-            flex-direction: column;
-        }
-    }
-    </style>
+    <!-- Download Button -->
+    <div class="download-btn" onclick="downloadReport()" title="Download Report">
+        <i class="fas fa-download"></i>
+    </div>
 
     <script>
-    // Subject Progress Chart
-    const subjectCtx = document.getElementById('subjectChart').getContext('2d');
-    new Chart(subjectCtx, {
-        type: 'doughnut',
-        data: {
-            labels: <?php echo json_encode(array_column($subjectProgress, 'subject')); ?>,
-            datasets: [{
-                data: <?php echo json_encode(array_column($subjectProgress, 'avg_progress')); ?>,
-                backgroundColor: [
-                    '#4B1C3C',
-                    '#FFB800',
-                    '#4CAF50',
-                    '#2196F3',
-                    '#f44336',
-                    '#9C27B0'
-                ],
-                borderWidth: 0
-            }]
-        },
-        options: {
-            responsive: true,
-            plugins: {
-                legend: {
-                    position: 'bottom'
+        // Activity Chart
+        const ctx1 = document.getElementById('activityChart').getContext('2d');
+        new Chart(ctx1, {
+            type: 'line',
+            data: {
+                labels: <?php 
+                    $dates = array_column($weeklyActivity, 'date');
+                    $labels = array_map(function($date) {
+                        return date('M d', strtotime($date));
+                    }, $dates);
+                    echo json_encode($labels);
+                ?>,
+                datasets: [{
+                    label: 'Activities',
+                    data: <?php echo json_encode(array_column($weeklyActivity, 'activities')); ?>,
+                    borderColor: '#4B1C3C',
+                    backgroundColor: 'rgba(75, 28, 60, 0.05)',
+                    borderWidth: 2,
+                    pointBackgroundColor: '#FFB800',
+                    pointBorderColor: '#ffffff',
+                    pointRadius: 4,
+                    tension: 0.3,
+                    fill: true
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: {
+                        display: false
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        grid: {
+                            color: '#f0f0f0'
+                        }
+                    },
+                    x: {
+                        grid: {
+                            display: false
+                        }
+                    }
                 }
             }
-        }
-    });
+        });
 
-    // Weekly Progress Chart
-    const weeklyCtx = document.getElementById('weeklyChart').getContext('2d');
-    new Chart(weeklyCtx, {
-        type: 'line',
-        data: {
-            labels: <?php echo json_encode(array_column($weeklyData, 'week')); ?>,
-            datasets: [{
-                label: 'Lessons Completed',
-                data: <?php echo json_encode(array_column($weeklyData, 'completed')); ?>,
-                borderColor: '#4B1C3C',
-                backgroundColor: 'rgba(75, 28, 60, 0.1)',
-                tension: 0.4,
-                fill: true
-            }]
-        },
-        options: {
-            responsive: true,
-            plugins: {
-                legend: {
-                    display: false
+        // Progress Chart
+        const ctx2 = document.getElementById('progressChart').getContext('2d');
+        new Chart(ctx2, {
+            type: 'doughnut',
+            data: {
+                labels: ['Completed', 'In Progress', 'Not Started'],
+                datasets: [{
+                    data: [
+                        <?php echo $overallStats['completed_lessons'] ?? 0; ?>,
+                        <?php echo $overallStats['in_progress'] ?? 0; ?>,
+                        <?php echo $overallStats['not_started'] ?? 0; ?>
+                    ],
+                    backgroundColor: ['#4CAF50', '#FF9800', '#e0e0e0'],
+                    borderWidth: 0
+                }]
+            },
+            options: {
+                responsive: true,
+                cutout: '70%',
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: {
+                            usePointStyle: true,
+                            padding: 15,
+                            font: {
+                                size: 12
+                            }
+                        }
+                    }
                 }
             }
-        }
-    });
+        });
 
-    function exportProgress(format) {
-        if (format === 'pdf') {
-            window.location.href = 'export-progress.php?format=pdf&student=<?php echo $viewAs; ?>';
-        } else if (format === 'csv') {
-            window.location.href = 'export-progress.php?format=csv&student=<?php echo $viewAs; ?>';
+        function downloadReport() {
+            alert('Download feature coming soon!');
         }
-    }
-    
-    function printProgress() {
-        window.print();
-    }
     </script>
 </body>
 </html>

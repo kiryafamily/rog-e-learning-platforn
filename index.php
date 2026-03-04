@@ -322,7 +322,7 @@
                         <li><i class="fas fa-check"></i> Quizzes & assessments</li>
                         <li><i class="fas fa-check"></i> Cancel anytime</li>
                     </ul>
-                    <a href="register.php?plan=monthly" class="btn btn-outline" style="width: 100%; text-align: center;">Choose Monthly</a>
+                    <a href="pricing.php?plan=monthly" class="btn btn-outline" style="width: 100%; text-align: center;">Choose Monthly</a>
                 </div>
                 
                 <!-- Termly Card (Popular) -->
@@ -343,7 +343,7 @@
                         <li><i class="fas fa-check"></i> Progress tracking</li>
                         <li><i class="fas fa-check"></i> <strong>20% family discount</strong></li>
                     </ul>
-                    <a href="register.php?plan=termly" class="btn btn-primary" style="width: 100%; text-align: center;">Choose Termly</a>
+                    <a href="pricing.php?plan=termly" class="btn btn-primary" style="width: 100%; text-align: center;">Choose Termly</a>
                 </div>
                 
                 <!-- Yearly Card -->
@@ -364,7 +364,7 @@
                         <li><i class="fas fa-check"></i> 20% family discount</li>
                         <li><i class="fas fa-check"></i> 2 months free</li>
                     </ul>
-                    <a href="register.php?plan=yearly" class="btn btn-outline" style="width: 100%; text-align: center;">Choose Yearly</a>
+                    <a href="pricing.php?plan=yearly" class="btn btn-outline" style="width: 100%; text-align: center;">Choose Yearly</a>
                 </div>
             </div>
             
@@ -376,33 +376,44 @@
     </section>
 
     <!-- Free Trial Section -->
-    <section id="free-trial" class="trial">
-        <div class="container">
-            <h2><span>Try For Free</span></h2>
-            <p class="section-subtitle" style="color: rgba(255,255,255,0.9);">Access sample lessons before you subscribe</p>
-            
-            <div class="trial-grid">
-                <div class="trial-card">
-                    <i class="fas fa-leaf"></i>
-                    <h3>P.4 Science</h3>
-                    <p>Plants and photosynthesis</p>
-                    <a href="" class="trial-btn">Watch Free <i class="fas fa-play"></i></a>
-                </div>
-                <div class="trial-card">
-                    <i class="fas fa-calculator"></i>
-                    <h3>P.5 Maths</h3>
-                    Fractions and decimals</p>
-                    <a href="#" class="trial-btn">Watch Free <i class="fas fa-play"></i></a>
-                </div>
-                <div class="trial-card">
-                    <i class="fas fa-globe-africa"></i>
-                    <h3>P.7 Social Studies</h3>
-                    <p>Map reading skills</p>
-                    <a href="#" class="trial-btn">Watch Free <i class="fas fa-play"></i></a>
-                </div>
+<section class="trial" id="free-lessons">
+    <div class="container">
+        <h2><span>Try For Free</span></h2>
+        <p class="section-subtitle" style="color: rgba(255,255,255,0.9);">Access sample lessons before you subscribe</p>
+        
+        <div class="trial-grid">
+            <!-- P.4 Science -->
+            <div class="trial-card" onclick="location.href='trial.php#science'">
+                <i class="fas fa-leaf"></i>
+                <h3>P.4 Science</h3>
+                <p>Plants and photosynthesis</p>
+                <a href="trial.php#science" class="trial-btn">
+                    Watch Free <i class="fas fa-play"></i>
+                </a>
+            </div>
+
+            <!-- P.5 Maths -->
+            <div class="trial-card" onclick="location.href='trial.php#maths'">
+                <i class="fas fa-calculator"></i>
+                <h3>P.5 Maths</h3>
+                <p>Fractions and decimals</p>
+                <a href="trial.php#maths" class="trial-btn">
+                    Watch Free <i class="fas fa-play"></i>
+                </a>
+            </div>
+
+            <!-- P.7 Social Studies -->
+            <div class="trial-card" onclick="location.href='trial.php#social'">
+                <i class="fas fa-globe-africa"></i>
+                <h3>P.7 Social Studies</h3>
+                <p>Map reading skills</p>
+                <a href="trial.php#social" class="trial-btn">
+                    Watch Free <i class="fas fa-play"></i>
+                </a>
             </div>
         </div>
-    </section>
+    </div>
+</section>
 
     <!-- Footer -->
     <footer class="footer">
@@ -423,9 +434,9 @@
                     <h4>Quick Links</h4>
                     <ul>
                         <li><a href="index.php">Home</a></li>
-                        <li><a href="#classes">Classes</a></li>
+                        <li><a href="#class es">Classes</a></li>
                         <li><a href="#subjects">Subjects</a></li>
-                        <li><a href="#pricing">Pricing</a></li>
+                        <li><a href="pricing.php">Pricing</a></li>
                     </ul>
                 </div>
                 

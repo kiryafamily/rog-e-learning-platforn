@@ -1,8 +1,12 @@
 <?php
-// login.php
-// Login page for RAYS OF GRACE Junior School
+// login.php - CLEAN PRODUCTION VERSION
+// NO DEBUGGING ECHOES - SILENT EXECUTION
+
+// Start output buffering at the VERY TOP to prevent header errors
+ob_start();
 
 require_once 'includes/config.php';
+require_once 'includes/functions.php';
 require_once 'includes/auth.php';
 
 // Redirect if already logged in
@@ -16,6 +20,16 @@ $success = '';
 
 // Handle login form submission
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    // Verify connection is still alive
+    try {
+        $pdo->query("SELECT 1")->fetch();
+    } catch (PDOException $e) {
+        if ($e->getCode() == 2006) {
+            // Try to reconnect
+            require_once 'includes/config.php'; // Reload config to reconnect
+        }
+    }
+    
     $email = $_POST['email'] ?? '';
     $password = $_POST['password'] ?? '';
     
@@ -32,6 +46,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $error = $result['message'];
     }
 }
+
+// Clear any output buffer before sending HTML
+ob_clean();
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -301,5 +318,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         color: #FFB800;
     }
     </style>
+    <script src="js/navbar.js"></script>
 </body>
 </html>
+<?php
+// End output buffering and send output
+ob_end_flush();
+?>

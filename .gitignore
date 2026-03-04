@@ -1,0 +1,35 @@
+# Environment files
+.env
+.env.local
+.env.production
+
+# IDE files
+.vscode/
+.idea/
+*.sublime-*
+
+# Logs
+*.log
+/logs/*
+!logs/.gitkeep
+
+# Temporary files
+*.tmp
+*.temp
+*.cache
+/var/cache/*
+
+# Database exports
+*.sql
+*.sql.gz
+*.bak
+
+# OS files
+.DS_Store
+Thumbs.db
+
+#config files
+# config.local.php
+
+#test files
+test-ssl.php

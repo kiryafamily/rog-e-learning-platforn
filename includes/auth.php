@@ -109,7 +109,16 @@ function registerUser($pdo, $data) {
         ];
         
     } catch (PDOException $e) {
-        return ['success' => false, 'message' => 'Registration failed. Please try again.'];
+        // Log the actual error
+        error_log("REGISTRATION ERROR: " . $e->getMessage());
+        error_log("Error code: " . $e->getCode());
+        error_log("SQL State: " . $e->errorInfo[0]);
+        if (isset($e->errorInfo[2])) {
+            error_log("Driver error: " . $e->errorInfo[2]);
+        }
+        
+        // Return a more specific message for debugging (remove in production)
+        return ['success' => false, 'message' => 'Registration failed: ' . $e->getMessage()];
     }
 }
 

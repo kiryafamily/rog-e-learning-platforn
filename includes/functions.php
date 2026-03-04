@@ -305,6 +305,7 @@ function backupDatabase() {
     return $filename;
 }
 // Add this at the end of your functions.php file
+// This function converts a datetime string into a human-readable "time ago" format, such as "5 minutes ago" or "2 days ago". It calculates the difference between the current time and the provided datetime, and returns an appropriate string based on the time difference. This is useful for displaying timestamps in a more user-friendly way throughout the application.
 if (!function_exists('timeAgo')) {
     function timeAgo($datetime) {
         $time = strtotime($datetime);

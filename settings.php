@@ -1,5 +1,6 @@
 <?php
 // settings.php - Complete Settings Page
+// This page allows users to manage their profile information, change their password, and update their preferences. It includes a modern design with a profile header card, statistics, recent activity, and tabs for different settings sections. The page also checks the user's subscription status and displays relevant information about their plan and family members if applicable.
 require_once 'includes/config.php';
 require_once 'includes/functions.php';
 require_once 'includes/auth.php';

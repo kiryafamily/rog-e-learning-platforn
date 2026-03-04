@@ -1,6 +1,7 @@
 <?php
 // includes/auth.php
 // Authentication functions for RAYS OF GRACE Junior School
+// This file contains all the necessary functions for user registration, login, logout, password management, and profile updates. It also includes security measures such as input validation, password hashing, and session management to ensure a secure and smooth user experience.
 
 // Add this debug line
 error_log("auth.php loaded - session status: " . session_status());

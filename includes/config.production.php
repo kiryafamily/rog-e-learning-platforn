@@ -1,5 +1,6 @@
 <?php
 // Production configuration - NO FALLBACK TO LOCALHOST!
+// This file should only be used in the production environment and should rely entirely on environment variables for configuration. This ensures that sensitive information is not hardcoded and that the application can be easily configured through the hosting environment's settings (e.g., cPanel, Heroku config vars, etc.).
 
 // ONLY use environment variables
 if (!defined('DB_HOST')) define('DB_HOST', getenv('DB_HOST'));

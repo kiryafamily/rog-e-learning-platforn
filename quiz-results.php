@@ -1,6 +1,7 @@
 <?php
 // quiz-results.php
 // Detailed quiz results with analytics and feedback
+// This page displays the results of a quiz taken by the user, including their score, performance analytics, strengths and weaknesses, and personalized recommendations for improvement. It retrieves the quiz result from the database based on the provided ID and checks if it belongs to the current user. The page features a detailed breakdown of each question, highlighting correct and incorrect answers, and provides actionable insights to help the user improve their understanding of the material. Additionally, it offers options to retake the quiz, review the lesson, and share achievements on social media.
 
 require_once 'includes/config.php';
 require_once 'includes/functions.php';

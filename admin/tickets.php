@@ -5,6 +5,7 @@ require_once '../includes/functions.php';
 require_once '../includes/auth.php';
 
 // admin/tickets.php
+// This page allows administrators to manage support tickets submitted by users. Admins can view ticket details, respond to tickets, update ticket status, and perform bulk actions. The design is modern and user-friendly, with clear indicators for ticket priority and status, and easy access to ticket details and actions.
 require_once '../includes/config.php';
 require_once '../includes/functions.php';
 require_once '../includes/auth.php';

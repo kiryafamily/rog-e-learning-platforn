@@ -72,6 +72,7 @@ $storageUsed = $totalSize;
 $storageLimit = 1000; // 1GB limit
 
 // Get storage by class
+// This is a simplified example. In a real application, you'd calculate actual file sizes and group by class properly.
 $storageByClass = [];
 foreach ($downloads as $d) {
     if (!isset($storageByClass[$d['class']])) {

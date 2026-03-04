@@ -791,6 +791,7 @@ require_once 'includes/functions.php';
 
     <script>
         // Mobile menu toggle
+        // This script toggles the visibility of the mobile navigation menu when the menu icon is clicked. It also changes the icon from a hamburger (fa-bars) to a close (fa-times) icon when the menu is active, providing visual feedback to users. Additionally, it includes functionality to close the menu when clicking outside of it or when clicking on a navigation link, enhancing the user experience on mobile devices.
         document.querySelector('.mobile-menu')?.addEventListener('click', function() {
             document.querySelector('.nav-menu').classList.toggle('active');
             const icon = this.querySelector('i');

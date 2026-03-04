@@ -1,6 +1,7 @@
 <?php
 // quiz.php
 // Interactive quiz taking system
+// This page allows users to take quizzes associated with lessons. It checks if the user has access to the quiz based on their subscription and whether the lesson is free. The page retrieves quiz questions from the database, presents them in an interactive format, and handles quiz submission by calculating the score, saving results, and providing feedback. The design is user-friendly and encourages learning through immediate feedback and review of answers.
 
 require_once 'includes/config.php';
 require_once 'includes/functions.php';

@@ -1,5 +1,6 @@
 <?php
 // admin/messages.php - View contact messages
+// This page allows administrators to view messages sent through the contact form, mark them as read, and delete them. The design is modern and clean, with clear indicators for read/unread status and easy access to message details and actions.
 require_once '../includes/config.php';
 require_once '../includes/auth.php';
 

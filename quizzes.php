@@ -1,5 +1,6 @@
 <?php
 // quizzes.php - Quiz Listing Page
+// This page lists all available quizzes for the user, showing their progress and allowing them to start or review quizzes. It checks if the user is logged in and retrieves quiz data from the database, including the number of questions, last score, and last taken date. The design is modern and visually appealing, with clear calls to action for starting quizzes and reviewing results.
 require_once 'includes/config.php';
 require_once 'includes/functions.php';
 require_once 'includes/auth.php';

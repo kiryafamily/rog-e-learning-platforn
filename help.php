@@ -5,6 +5,7 @@ require_once 'includes/functions.php';
 require_once 'includes/auth.php';
 
 // Redirect if not logged in
+// This page is only accessible to logged-in users. It provides a comprehensive help center with FAQs, support ticket submission, and contact options. The page is designed to be user-friendly and informative, guiding users to find answers to their questions or get in touch with support when needed.
 if (!isLoggedIn()) {
     header('Location: login.php');
     exit;

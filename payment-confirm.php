@@ -1,6 +1,7 @@
 <?php
 // payment-confirm.php
 // Payment confirmation and status check
+// This page displays the status of a payment transaction after the user has initiated a Mobile Money payment. It checks the transaction status in the database and shows appropriate messages for successful, pending, or failed payments. For pending payments, it provides instructions for the user to complete the payment and automatically refreshes to check for updates. The design is clean and informative, guiding users through the next steps based on their payment status.
 
 require_once 'includes/config.php';
 require_once 'includes/functions.php';

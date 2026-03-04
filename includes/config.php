@@ -1,6 +1,7 @@
 <?php
 // includes/config.php
 // Main configuration - Auto-detects environment
+// This file is the central configuration for the RAYS OF GRACE Junior School e-learning platform. It detects the environment (local vs production) and loads the appropriate database credentials. It also defines site-wide constants and helper functions for authentication, session management, and other common tasks. This ensures a consistent configuration across all pages and simplifies maintenance and debugging.
 
 // Prevent multiple inclusions
 if (defined('CONFIG_LOADED')) {

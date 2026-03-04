@@ -1,6 +1,7 @@
 <?php
 // login.php - CLEAN PRODUCTION VERSION
 // NO DEBUGGING ECHOES - SILENT EXECUTION
+// This page handles user login, including form display and processing. It checks if the user is already logged in and redirects them to the dashboard if so. When the login form is submitted, it validates the credentials against the database and sets session variables accordingly. The design is simple and focused on usability, with clear error messages for failed login attempts and a link to the registration page for new users.
 
 // Start output buffering at the VERY TOP to prevent header errors
 ob_start();

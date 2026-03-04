@@ -1,6 +1,7 @@
 <?php
 // lesson-view.php - FIXED VERSION
 // Individual lesson viewer with video and PDF download
+// This page displays the details of a specific lesson, including the video player, lesson notes, and downloadable materials. It checks if the user has access to the lesson (free or subscribed) and tracks their progress. The design is modern and user-friendly, with clear navigation and engaging visuals to enhance the learning experience.
 
 require_once 'includes/config.php';
 require_once 'includes/functions.php';

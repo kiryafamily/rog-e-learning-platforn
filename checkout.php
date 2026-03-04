@@ -1,5 +1,6 @@
 <?php
 // checkout.php - Checkout Page for Logged-in Users
+// This page allows logged-in users to select a subscription plan, choose a payment method, and proceed to the payment process. It also checks if the user already has an active subscription and displays appropriate messages. The page is designed to be user-friendly and secure, guiding users through the checkout process with clear instructions and feedback.
 require_once 'includes/config.php';
 require_once 'includes/functions.php';
 require_once 'includes/auth.php';

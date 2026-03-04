@@ -3,6 +3,7 @@
 $selectedPlan = $_GET['plan'] ?? 'monthly';
 // register.php
 // Registration page with family discount for RAYS OF GRACE Junior School
+// This page allows new users to create an account and subscribe to the digital learning platform. It includes a registration form that collects user information, applies a family discount if a valid family code is provided, and redirects users to the payment page after successful registration. The design is modern and user-friendly, with clear instructions and feedback for users throughout the registration process.
 
 require_once 'includes/config.php';
 require_once 'includes/auth.php';

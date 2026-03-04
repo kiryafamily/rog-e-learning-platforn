@@ -1,5 +1,6 @@
 <?php
 // admin/edit-lesson.php - Edit Existing Lessons
+// This page allows admins to edit existing lessons, including title, description, content, and associated media.
 require_once '../includes/config.php';
 require_once '../includes/functions.php';
 require_once '../includes/auth.php';

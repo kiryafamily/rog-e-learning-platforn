@@ -1,5 +1,6 @@
 <?php
 // admin/settings.php - System Settings
+// This page allows administrators to configure various system settings, including general site information, payment settings, email configuration, and security options. The design is modern and user-friendly, with clear sections for each category of settings and helpful tooltips to guide admins through the configuration process.
 require_once '../includes/config.php';
 require_once '../includes/functions.php';
 require_once '../includes/auth.php';

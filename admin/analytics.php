@@ -111,6 +111,7 @@ $stmt = $pdo->query("
 $sub_stats = $stmt->fetch();
 
 // Subscription revenue
+// Revenue over time
 $stmt = $pdo->prepare("
     SELECT 
         DATE(created_at) as date,

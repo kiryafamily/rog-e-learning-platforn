@@ -1,5 +1,6 @@
 <?php
 // admin/transactions.php - Transaction Management
+// This page allows administrators to view and manage all transactions on the platform. Admins can filter transactions by status, provider, and date range, search for specific transactions, and perform actions like refunding or deleting transactions. The design is modern and visually appealing, with a focus on usability and data visualization.
 require_once '../includes/config.php';
 require_once '../includes/functions.php';
 require_once '../includes/auth.php';

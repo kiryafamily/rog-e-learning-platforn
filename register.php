@@ -1,4 +1,6 @@
 <?php
+// register.php - Add this at the top after session_start()
+$selectedPlan = $_GET['plan'] ?? 'monthly';
 // register.php
 // Registration page with family discount for RAYS OF GRACE Junior School
 
@@ -105,6 +107,7 @@ if (isset($_GET['family'])) {
                     <?php endif; ?>
                     
                     <form method="POST" action="" class="register-form" id="registerForm">
+                        <input type="hidden" name="plan" value="<?php echo $selectedPlan; ?>">
                         <input type="hidden" name="plan" value="<?php echo htmlspecialchars($selectedPlan); ?>">
                         
                         <!-- Full Name -->

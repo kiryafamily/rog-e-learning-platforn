@@ -304,4 +304,27 @@ function backupDatabase() {
     
     return $filename;
 }
+// Add this at the end of your functions.php file
+if (!function_exists('timeAgo')) {
+    function timeAgo($datetime) {
+        $time = strtotime($datetime);
+        $now = time();
+        $diff = $now - $time;
+        
+        if ($diff < 60) {
+            return $diff . ' seconds ago';
+        } elseif ($diff < 3600) {
+            $mins = floor($diff / 60);
+            return $mins . ' minute' . ($mins > 1 ? 's' : '') . ' ago';
+        } elseif ($diff < 86400) {
+            $hours = floor($diff / 3600);
+            return $hours . ' hour' . ($hours > 1 ? 's' : '') . ' ago';
+        } elseif ($diff < 2592000) {
+            $days = floor($diff / 86400);
+            return $days . ' day' . ($days > 1 ? 's' : '') . ' ago';
+        } else {
+            return date('M j, Y', $time);
+        }
+    }
+}
 ?>

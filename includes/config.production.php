@@ -9,7 +9,7 @@ if (!defined('DB_USER')) define('DB_USER', getenv('DB_USER'));
 if (!defined('DB_PASS')) define('DB_PASS', getenv('DB_PASS'));
 if (!defined('DB_PORT')) define('DB_PORT', getenv('DB_PORT') ?: 4000);
 
-// Production error settings
+// Production error settings    
 ini_set('display_errors', 0);
 ini_set('display_startup_errors', 0);
 error_reporting(E_ALL & ~E_DEPRECATED & ~E_STRICT);

@@ -108,8 +108,7 @@ $recentlyAccessed = $stmt->fetchAll();
         <div class="container">
             <div class="nav-left">
                 <div class="logo">
-                    <img src="images/logo.png" alt="RAYS OF GRACE">
-                    <span>Offline Downloads</span>
+                    <img src="images/logo-3.png" alt="RAYS OF GRACE">
                 </div>
             </div>
             <div class="nav-right">

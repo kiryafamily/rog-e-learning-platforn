@@ -805,11 +805,7 @@ $totalLessons = $stmt->fetch()['total'];
     <!-- Top Navigation -->
     <nav class="dashboard-nav">
         <div class="logo-area">
-            <img src="images/logo.png" alt="RAYS OF GRACE">
-            <div>
-                <span>RAYS OF GRACE</span>
-                <small>Learning Portal</small>
-            </div>
+            <img src="images/logo-3.png" alt="RAYS OF GRACE">
         </div>
         
         <div class="user-menu">

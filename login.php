@@ -65,11 +65,7 @@ ob_clean();
     <nav class="navbar">
         <div class="container">
             <div class="logo">
-                <img src="images/logo.png" alt="RAYS OF GRACE Junior School">
-                <span>
-                    RAYS OF GRACE
-                    <small>Junior School</small>
-                </span>
+                <img src="images/logo-3.png" alt="RAYS OF GRACE Junior School">
             </div>
             <a href="index.php" class="btn btn-outline"><i class="fas fa-home"></i> Back to Home</a>
         </div>

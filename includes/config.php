@@ -1,19 +1,29 @@
 <?php
 // includes/config.php
-// Database configuration for RAYS OF GRACE Junior School
+// Main configuration - Auto-detects environment
 
-// Database credentials
-define('DB_HOST', 'localhost');
-define('DB_NAME', 'raysofgrace_db');
-define('DB_USER', 'root'); // Change this to your database username
-define('DB_PASS', ''); // Change this to your database password
+// Prevent multiple inclusions
+if (defined('CONFIG_LOADED')) {
+    return;
+}
+define('CONFIG_LOADED', true);
 
-// Site configuration
-define('SITE_NAME', 'RAYS OF GRACE Junior School');
-define('SITE_URL', 'https://www.raysofgrace.ac.ug');
+// Detect environment FIRST
+$is_local = in_array($_SERVER['SERVER_NAME'] ?? '', ['localhost', '127.0.0.1']);
+
+if ($is_local) {
+    // LOCAL ENVIRONMENT - Load local config
+    require_once __DIR__ . '/config.local.php';
+} else {
+    // PRODUCTION ENVIRONMENT - Load production config
+    require_once __DIR__ . '/config.production.php';
+}
+
+// Site configuration (these are safe to define here)
+// define('SITE_NAME', 'RAYS OF GRACE Junior School');
 define('SITE_MOTTO', 'Knowledge Changing Lives Forever');
 
-// Payment configuration (Mobile Money)
+// Payment configuration
 define('MTN_NUMBER', '256XXXXXXXXX'); // Replace with your MTN business number
 define('AIRTEL_NUMBER', '256XXXXXXXXX'); // Replace with your Airtel business number
 
@@ -23,7 +33,7 @@ define('PRICE_TERMLY', 500000);
 define('PRICE_YEARLY', 1500000);
 define('FAMILY_DISCOUNT', 0.20); // 20% discount
 
-// Establish database connection
+// Establish database connection using credentials from loaded config
 try {
     $pdo = new PDO(
         "mysql:host=" . DB_HOST . ";dbname=" . DB_NAME . ";charset=utf8mb4",
@@ -36,7 +46,9 @@ try {
         ]
     );
 } catch (PDOException $e) {
-    die("Connection failed: " . $e->getMessage());
+    // Log error but don't expose details in production
+    error_log("Database connection failed: " . $e->getMessage());
+    die("Connection failed. Please try again later.");
 }
 
 // Start session if not already started
@@ -76,20 +88,5 @@ function calculateFamilyDiscount($numberOfChildren, $basePrice) {
         return $basePrice * (1 - FAMILY_DISCOUNT);
     }
     return $basePrice;
-}
-
-/**
- * Main Configuration - Auto-detects environment
- */
-
-// Detect if we're on localhost or production
-$is_local = in_array($_SERVER['SERVER_NAME'] ?? '', ['localhost', '127.0.0.1']);
-
-if ($is_local) {
-    // Load local development configuration
-    require_once __DIR__ . '/config.local.php';
-} else {
-    // Load production configuration (Render)
-    require_once __DIR__ . '/config.production.php';
 }
 ?>

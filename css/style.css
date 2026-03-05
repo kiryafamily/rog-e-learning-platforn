@@ -224,7 +224,7 @@ h2 span {
 
 /* ===== MOBILE MENU BUTTON ===== */
 .mobile-menu {
-    display: flex;
+    display: none;
     align-items: center;
     justify-content: center;
     width: 45px;

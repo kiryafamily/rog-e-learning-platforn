@@ -136,12 +136,12 @@ require_once 'includes/functions.php';
         }
 
         /* Mobile Menu */
-        .mobile-menu {
+        /* .mobile-menu {
             display: none;
             cursor: pointer;
             font-size: 1.5rem;
             color: #4B1C3C;
-        }
+        } */
 
         /* Hero Section */
         .contact-hero {
@@ -517,9 +517,9 @@ require_once 'includes/functions.php';
         }
 
         @media (max-width: 768px) {
-            .mobile-menu {
+            /* .mobile-menu {
                 display: block;
-            }
+            } */
             
             .nav-menu {
                 display: none;
@@ -561,11 +561,7 @@ require_once 'includes/functions.php';
     <nav class="navbar">
         <div class="container">
             <div class="logo">
-                <img src="images/logo.png" alt="RAYS OF GRACE Junior School">
-                <span>
-                    RAYS OF GRACE
-                    <small>Junior School</small>
-                </span>
+                <img src="images/logo-3.png" alt="RAYS OF GRACE Junior School">
             </div>
             
             <div class="mobile-menu">
@@ -744,15 +740,14 @@ require_once 'includes/functions.php';
         <div class="footer-grid">
             <div class="footer-about">
                 <div class="footer-logo">
-                    <img src="images/logo.png" alt="RAYS OF GRACE">
-                    <span>RAYS OF GRACE</span>
+                    <img src="images/logo-2.png" alt="RAYS OF GRACE">
                 </div>
-                <p>Knowledge changing lives forever. Providing quality digital education for Primary students in Uganda and beyond.</p>
+                <p>Knowledge changing lives forever</p>
                 <div class="social-links">
-                    <a href="#"><i class="fab fa-facebook"></i></a>
-                    <a href="#"><i class="fab fa-twitter"></i></a>
-                    <a href="#"><i class="fab fa-youtube"></i></a>
-                    <a href="#"><i class="fab fa-whatsapp"></i></a>
+                    <a href="https://www.facebook.com/profile.php?id=100057146993995" target="_blank" aria-label="Facebook"><i class="fab fa-facebook"></i></a>
+                    <a href="https://x.com/raysofgracejr" target="_blank" aria-label="Twitter"><i class="fab fa-twitter"></i></a>
+                    <a href="https://www.instagram.com/raysofgraceacademyuganda" target="_blank" aria-label="Instagram"><i class="fab fa-instagram"></i></a>
+                    <a href="https://wa.me/256778086883" target="_blank" aria-label="WhatsApp"><i class="fab fa-whatsapp"></i></a>
                 </div>
             </div>
             
@@ -778,14 +773,14 @@ require_once 'includes/functions.php';
             
             <div class="footer-contact">
                 <h4>Contact Info</h4>
-                <p><i class="fas fa-phone"></i> +256 XXX XXXXXX</p>
+                <p><i class="fas fa-phone"></i> +256 778 086 883</p>
                 <p><i class="fas fa-envelope"></i> info@raysofgrace.ac.ug</p>
                 <p><i class="fas fa-map-marker-alt"></i> Kampala, Uganda</p>
             </div>
         </div>
         
         <div class="footer-bottom">
-            <p>&copy; 2026 RAYS OF GRACE Junior School. All rights reserved.</p>
+            <p>&copy; 2026 Rays of Grace | All Rights Reserved</p>
         </div>
     </footer>
 

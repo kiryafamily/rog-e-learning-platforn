@@ -391,11 +391,7 @@ $stats = $stmt->fetch();
     <!-- Navigation -->
     <nav class="dashboard-nav">
         <div class="logo-area">
-            <img src="images/logo.png" alt="RAYS OF GRACE">
-            <div>
-                <span>RAYS OF GRACE</span>
-                <small>Quiz Center</small>
-            </div>
+            <img src="images/logo-3.png" alt="RAYS OF GRACE">
         </div>
         
         <div class="nav-right">

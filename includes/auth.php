@@ -1,6 +1,10 @@
 <?php
 // includes/auth.php
 // Authentication functions for RAYS OF GRACE Junior School
+// This file contains all the necessary functions for user registration, login, logout, password management, and profile updates. It also includes security measures such as input validation, password hashing, and session management to ensure a secure and smooth user experience.
+
+// Add this debug line
+error_log("auth.php loaded - session status: " . session_status());
 
 require_once 'config.php';
 require_once 'functions.php';
@@ -106,7 +110,16 @@ function registerUser($pdo, $data) {
         ];
         
     } catch (PDOException $e) {
-        return ['success' => false, 'message' => 'Registration failed. Please try again.'];
+        // Log the actual error
+        error_log("REGISTRATION ERROR: " . $e->getMessage());
+        error_log("Error code: " . $e->getCode());
+        error_log("SQL State: " . $e->errorInfo[0]);
+        if (isset($e->errorInfo[2])) {
+            error_log("Driver error: " . $e->errorInfo[2]);
+        }
+        
+        // Return a more specific message for debugging (remove in production)
+        return ['success' => false, 'message' => 'Registration failed: ' . $e->getMessage()];
     }
 }
 

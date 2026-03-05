@@ -1,8 +1,4 @@
 <?php
-// includes/functions.php
-// Core functions for RAYS OF GRACE Junior School
-
-require_once 'config.php';
 
 /**
  * Sanitize input data
@@ -307,5 +303,29 @@ function backupDatabase() {
     system($command);
     
     return $filename;
+}
+// Add this at the end of your functions.php file
+// This function converts a datetime string into a human-readable "time ago" format, such as "5 minutes ago" or "2 days ago". It calculates the difference between the current time and the provided datetime, and returns an appropriate string based on the time difference. This is useful for displaying timestamps in a more user-friendly way throughout the application.
+if (!function_exists('timeAgo')) {
+    function timeAgo($datetime) {
+        $time = strtotime($datetime);
+        $now = time();
+        $diff = $now - $time;
+        
+        if ($diff < 60) {
+            return $diff . ' seconds ago';
+        } elseif ($diff < 3600) {
+            $mins = floor($diff / 60);
+            return $mins . ' minute' . ($mins > 1 ? 's' : '') . ' ago';
+        } elseif ($diff < 86400) {
+            $hours = floor($diff / 3600);
+            return $hours . ' hour' . ($hours > 1 ? 's' : '') . ' ago';
+        } elseif ($diff < 2592000) {
+            $days = floor($diff / 86400);
+            return $days . ' day' . ($days > 1 ? 's' : '') . ' ago';
+        } else {
+            return date('M j, Y', $time);
+        }
+    }
 }
 ?>

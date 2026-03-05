@@ -1,6 +1,7 @@
 <?php
 // admin/manage-users.php
 // User management interface for administrators
+// This page allows admins to view all users, filter by role and status, search for specific users, and perform actions like editing user details, sending notifications, and deleting accounts. The design is modern and user-friendly, with a focus on usability and efficiency.
 
 require_once '../includes/config.php';
 require_once '../includes/functions.php';

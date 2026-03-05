@@ -1,5 +1,6 @@
 <?php
 // dashboard.php - STUNNING REDESIGN
+// This page serves as the main dashboard for logged-in users, providing an overview of their learning progress, subscription status, and quick access to lessons and activities. It includes a personalized welcome message, a subscription banner for users without an active subscription, and various sections such as "Continue Learning", "Quick Access", and "Recent Activity". The design is modern and user-friendly, with a focus on providing relevant information at a glance and easy navigation to key features of the platform.
 require_once 'includes/config.php';
 require_once 'includes/functions.php';
 require_once 'includes/auth.php';

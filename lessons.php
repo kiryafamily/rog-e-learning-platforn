@@ -1,7 +1,7 @@
 <?php
 // lessons.php
 // Browse and view lessons by class and subject
-
+// This page allows users to browse available lessons based on their class and subject. It checks the user's subscription status to determine which lessons they can access (free vs. premium). The page features a sidebar for class and subject selection, a main area displaying lesson cards with details, and prompts for users without access to subscribe for full content. Admin users have additional options to manage lessons directly from this page.
 require_once 'includes/config.php';
 require_once 'includes/functions.php';
 require_once 'includes/auth.php';

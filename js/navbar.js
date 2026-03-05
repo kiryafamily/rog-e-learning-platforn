@@ -1,4 +1,5 @@
 // Enhanced mobile menu with smooth animations
+// This script handles the mobile menu toggle functionality, including smooth animations for opening and closing the menu. It also changes the menu icon from a hamburger to a close icon when the menu is active. Additionally, it includes functionality to close the menu when clicking outside of it or when clicking on a navigation link (useful for single-page applications). The script also adds a "scrolled" class to the navbar when the user scrolls down, allowing for styling changes based on scroll position. Finally, it highlights the active navigation link based on the current scroll position, providing visual feedback to users about their location on the page.
 document.addEventListener('DOMContentLoaded', function() {
     const mobileMenu = document.querySelector('.mobile-menu');
     const navMenu = document.querySelector('.nav-menu');

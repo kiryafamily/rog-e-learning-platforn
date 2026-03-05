@@ -1,5 +1,6 @@
 // offline-worker.js
 // Service worker for offline access to lessons
+// This service worker implements a caching strategy to allow users to access previously viewed lessons and content even when they are offline. It uses a combination of cache-first and stale-while-revalidate strategies to ensure that users have access to content while also keeping the cache updated with the latest versions when they are online. The service worker also handles background sync for actions taken while offline, such as progress tracking and quiz results, ensuring that this data is synced with the server once the user is back online. Additionally, it includes push notification handling for updates and reminders related to the e-learning platform.
 
 const CACHE_NAME = 'raysofgrace-v1';
 const API_CACHE_NAME = 'raysofgrace-api-v1';

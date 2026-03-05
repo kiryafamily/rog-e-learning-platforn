@@ -24,6 +24,7 @@ WORKDIR /var/www/html
 COPY . /var/www/html/
 
 # **CREATE DIRECTORY STRUCTURE FIRST** 
+# Create necessary directories for logs and uploads
 RUN mkdir -p /var/www/html/logs \
     && mkdir -p /var/www/html/uploads
 

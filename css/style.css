@@ -5,6 +5,7 @@
    ======================================== */
 
 /* Font Awesome Icons */
+/* Using Font Awesome 6 for a wide range of icons to enhance the visual appeal and usability of the website. The icons are used in navigation, buttons, and various sections to provide intuitive visual cues for users. */
 @import url('https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css');
 
 /* Google Font */
@@ -877,15 +878,15 @@ h2 span {
     color: var(--gold);
 }
 
-/* ===== FREE TRIAL SECTION ===== */
+/* Enhanced Trial Section */
 .trial {
     background: linear-gradient(135deg, var(--purple) 0%, #2F1224 100%);
-    color: var(--white);
     padding: 80px 0;
+    color: white;
 }
 
 .trial h2 {
-    color: var(--white);
+    color: white;
 }
 
 .trial h2 span {
@@ -895,7 +896,7 @@ h2 span {
 
 .trial-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    grid-template-columns: repeat(3, 1fr);
     gap: 30px;
     margin-top: 40px;
 }
@@ -907,11 +908,15 @@ h2 span {
     text-align: center;
     backdrop-filter: blur(10px);
     transition: all 0.3s ease;
+    cursor: pointer;
+    border: 1px solid rgba(255,255,255,0.1);
 }
 
 .trial-card:hover {
     background: rgba(255, 255, 255, 0.2);
     transform: translateY(-5px);
+    box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+    border-color: var(--gold);
 }
 
 .trial-card i {
@@ -921,14 +926,15 @@ h2 span {
 }
 
 .trial-card h3 {
-    color: var(--white);
+    color: white;
     margin-bottom: 10px;
+    font-size: 1.3rem;
 }
 
 .trial-card p {
     color: rgba(255, 255, 255, 0.9);
     margin-bottom: 20px;
-    font-size: 0.9rem;
+    font-size: 0.95rem;
 }
 
 .trial-btn {
@@ -938,12 +944,23 @@ h2 span {
     display: inline-flex;
     align-items: center;
     gap: 5px;
+    padding: 8px 20px;
+    border-radius: 50px;
+    border: 1px solid var(--gold);
+    transition: all 0.3s ease;
 }
 
 .trial-btn:hover {
+    background: var(--gold);
+    color: var(--purple);
     gap: 10px;
 }
 
+@media (max-width: 768px) {
+    .trial-grid {
+        grid-template-columns: 1fr;
+    }
+}
 /* ===== FOOTER ===== */
 .footer {
     background-color: #1A0D14;

@@ -1,4 +1,4 @@
-raysofgrace.ac.ug/
+raysofgrace.ac.ug/ 
 ├── index.php
 ├── login.php
 ├── register.php

@@ -2,6 +2,7 @@
 // logout.php - Simple logout script
 
 // Start session
+// This script logs the user out by destroying the session and redirecting to the homepage. It ensures that all session data is cleared and the session cookie is removed for security.
 session_start();
 
 // Clear all session variables

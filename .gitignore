@@ -29,4 +29,7 @@
 Thumbs.db
 
 #config files
-config.local.php
+# config.local.php
+
+#test files
+test-ssl.php

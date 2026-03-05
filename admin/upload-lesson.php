@@ -6,6 +6,7 @@ error_reporting(E_ALL);
 ini_set('display_errors', 1);
 
 // Include required files - ONLY ONCE!
+// This ensures we have a single database connection and consistent functions across the admin panel, while also preventing any accidental re-inclusions that could cause errors or conflicts.
 require_once '../includes/config.php';
 require_once '../includes/functions.php';
 require_once '../includes/auth.php';

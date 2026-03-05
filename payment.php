@@ -1,6 +1,7 @@
 <?php
 // payment.php
 // Payment processing for MTN Mobile Money, Airtel Money, and Cards
+// This page allows users to select a subscription plan, choose a payment method, and complete their payment. It handles both Mobile Money and card payments, applying family discounts where applicable. The page is designed to be user-friendly and secure, guiding users through the payment process with clear instructions and feedback.
 
 require_once 'includes/config.php';
 require_once 'includes/functions.php';

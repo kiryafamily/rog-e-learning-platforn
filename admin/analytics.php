@@ -1,12 +1,9 @@
 <?php
-// admin/analytics.php
-// Comprehensive analytics dashboard for school administrators
-
+// admin/analytics.php - Complete Analytics Dashboard
 require_once '../includes/config.php';
 require_once '../includes/functions.php';
 require_once '../includes/auth.php';
 
-// Redirect if not logged in or not admin
 if (!isLoggedIn() || !isAdmin()) {
     header('Location: ../login.php');
     exit;
@@ -14,44 +11,67 @@ if (!isLoggedIn() || !isAdmin()) {
 
 $user = getCurrentUser($pdo);
 
-// Date range
-$start_date = $_GET['start_date'] ?? date('Y-m-d', strtotime('-30 days'));
-$end_date = $_GET['end_date'] ?? date('Y-m-d');
+// Get date range from request (default: last 30 days)
+$end_date = date('Y-m-d');
+$start_date = date('Y-m-d', strtotime('-30 days'));
 
-// Get revenue data
-$stmt = $pdo->prepare("
+if (isset($_GET['start_date']) && isset($_GET['end_date'])) {
+    $start_date = $_GET['start_date'];
+    $end_date = $_GET['end_date'];
+}
+
+// ============================================
+// USER STATISTICS
+// ============================================
+
+// Total users by role
+$stmt = $pdo->query("
     SELECT 
-        DATE(created_at) as date,
-        COUNT(*) as transactions,
-        SUM(amount) as revenue
-    FROM transactions
-    WHERE status = 'completed'
-    AND DATE(created_at) BETWEEN ? AND ?
-    GROUP BY DATE(created_at)
-    ORDER BY date
+        COUNT(*) as total,
+        SUM(CASE WHEN role = 'admin' THEN 1 ELSE 0 END) as admins,
+        SUM(CASE WHEN role = 'teacher' THEN 1 ELSE 0 END) as teachers,
+        SUM(CASE WHEN role = 'parent' THEN 1 ELSE 0 END) as parents,
+        SUM(CASE WHEN role = 'student' THEN 1 ELSE 0 END) as students
+    FROM users
 ");
-$stmt->execute([$start_date, $end_date]);
-$revenue_data = $stmt->fetchAll();
+$user_stats = $stmt->fetch();
 
-// Get user growth
+// User growth over time
 $stmt = $pdo->prepare("
     SELECT 
         DATE(created_at) as date,
         COUNT(*) as new_users
     FROM users
-    WHERE DATE(created_at) BETWEEN ? AND ?
+    WHERE created_at BETWEEN ? AND ?
     GROUP BY DATE(created_at)
     ORDER BY date
 ");
-$stmt->execute([$start_date, $end_date]);
+$stmt->execute([$start_date . ' 00:00:00', $end_date . ' 23:59:59']);
 $user_growth = $stmt->fetchAll();
 
-// Get lesson popularity
+// ============================================
+// LESSON STATISTICS
+// ============================================
+
+// Lesson stats
 $stmt = $pdo->query("
     SELECT 
+        COUNT(*) as total_lessons,
+        SUM(CASE WHEN status = 'published' THEN 1 ELSE 0 END) as published,
+        SUM(CASE WHEN status = 'draft' THEN 1 ELSE 0 END) as drafts,
+        COUNT(DISTINCT class) as classes,
+        COUNT(DISTINCT subject) as subjects
+    FROM lessons
+");
+$lesson_stats = $stmt->fetch();
+
+// Most popular lessons
+$stmt = $pdo->query("
+    SELECT 
+        l.id,
+        l.topic,
         l.class,
         l.subject,
-        l.topic,
         COUNT(p.id) as views,
         COUNT(DISTINCT p.user_id) as unique_students
     FROM lessons l
@@ -59,687 +79,757 @@ $stmt = $pdo->query("
     WHERE l.status = 'published'
     GROUP BY l.id
     ORDER BY views DESC
-    LIMIT 20
+    LIMIT 10
 ");
 $popular_lessons = $stmt->fetchAll();
 
-// Get subscription distribution
+// Lessons by class
 $stmt = $pdo->query("
     SELECT 
-        plan,
-        COUNT(*) as count,
-        SUM(CASE WHEN status = 'active' THEN 1 ELSE 0 END) as active
-    FROM subscriptions
-    GROUP BY plan
-");
-$subscriptions = $stmt->fetchAll();
-
-// Get class performance
-$stmt = $pdo->query("
-    SELECT 
-        u.class,
-        COUNT(DISTINCT u.id) as students,
-        COUNT(DISTINCT p.lesson_id) as lessons_started,
-        COUNT(DISTINCT CASE WHEN p.status = 'completed' THEN p.lesson_id END) as lessons_completed,
-        AVG(qr.percentage) as avg_quiz_score
-    FROM users u
-    LEFT JOIN progress p ON u.id = p.user_id
-    LEFT JOIN quiz_results qr ON u.id = qr.user_id
-    WHERE u.role = 'student'
-    GROUP BY u.class
-");
-$class_performance = $stmt->fetchAll();
-
-// Get device analytics
-$stmt = $pdo->query("
-    SELECT 
-        CASE 
-            WHEN ip_address LIKE '%.%' THEN 'Web'
-            ELSE 'Mobile'
-        END as device_type,
+        class,
         COUNT(*) as count
-    FROM activity_log
-    WHERE created_at >= DATE_SUB(NOW(), INTERVAL 7 DAY)
-    GROUP BY device_type
+    FROM lessons
+    GROUP BY class
+    ORDER BY class
 ");
-$devices = $stmt->fetchAll();
+$lessons_by_class = $stmt->fetchAll();
 
-// Calculate totals
-$total_revenue = array_sum(array_column($revenue_data, 'revenue'));
-$total_users = $pdo->query("SELECT COUNT(*) FROM users")->fetchColumn();
-$active_subs = $pdo->query("SELECT COUNT(*) FROM subscriptions WHERE status = 'active' AND end_date > NOW()")->fetchColumn();
-$total_views = $pdo->query("SELECT COUNT(*) FROM progress")->fetchColumn();
+// ============================================
+// SUBSCRIPTION STATISTICS
+// ============================================
+
+// Active subscriptions
+$stmt = $pdo->query("
+    SELECT 
+        COUNT(*) as total,
+        SUM(CASE WHEN plan = 'monthly' THEN 1 ELSE 0 END) as monthly,
+        SUM(CASE WHEN plan = 'termly' THEN 1 ELSE 0 END) as termly,
+        SUM(CASE WHEN plan = 'yearly' THEN 1 ELSE 0 END) as yearly
+    FROM subscriptions
+    WHERE status = 'active' AND end_date > NOW()
+");
+$sub_stats = $stmt->fetch();
+
+// Subscription revenue
+// Revenue over time
+$stmt = $pdo->prepare("
+    SELECT 
+        DATE(created_at) as date,
+        COUNT(*) as count,
+        SUM(amount) as revenue
+    FROM transactions
+    WHERE status = 'completed' 
+    AND created_at BETWEEN ? AND ?
+    GROUP BY DATE(created_at)
+    ORDER BY date
+");
+$stmt->execute([$start_date . ' 00:00:00', $end_date . ' 23:59:59']);
+$revenue_data = $stmt->fetchAll();
+
+// Total revenue
+$stmt = $pdo->query("SELECT COALESCE(SUM(amount), 0) as total FROM transactions WHERE status = 'completed'");
+$total_revenue = $stmt->fetch()['total'];
+
+// ============================================
+// QUIZ STATISTICS
+// ============================================
+
+$stmt = $pdo->query("
+    SELECT 
+        COUNT(*) as total_attempts,
+        COUNT(DISTINCT user_id) as students_took_quizzes,
+        AVG(percentage) as avg_score
+    FROM quiz_results
+");
+$quiz_stats = $stmt->fetch();
+
+// ============================================
+// SUPPORT TICKETS
+// ============================================
+
+$stmt = $pdo->query("
+    SELECT 
+        COUNT(*) as total,
+        SUM(CASE WHEN status = 'open' THEN 1 ELSE 0 END) as open,
+        SUM(CASE WHEN status = 'in-progress' THEN 1 ELSE 0 END) as in_progress,
+        SUM(CASE WHEN status = 'resolved' THEN 1 ELSE 0 END) as resolved
+    FROM support_tickets
+");
+$ticket_stats = $stmt->fetch();
 ?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Analytics - RAYS OF GRACE</title>
+    <title>Analytics Dashboard - RAYS OF GRACE</title>
     <link rel="stylesheet" href="../css/style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Poppins', sans-serif;
+        }
+
+        body {
+            background: #f4f4f9;
+        }
+
+        /* Top Navigation */
+        .admin-topnav {
+            background: linear-gradient(135deg, #4B1C3C 0%, #2F1224 100%);
+            padding: 15px 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            color: white;
+            box-shadow: 0 4px 15px rgba(75,28,60,0.3);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .logo-area {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .logo-area img {
+            height: 45px;
+            width: auto;
+            background: white;
+            border-radius: 8px;
+            padding: 5px;
+        }
+
+        .logo-area span {
+            font-size: 1.3rem;
+            font-weight: 600;
+            color: white;
+        }
+
+        .admin-profile {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .admin-badge {
+            background: #FFB800;
+            color: #4B1C3C;
+            padding: 8px 20px;
+            border-radius: 50px;
+            font-weight: 600;
+        }
+
+        .nav-btn {
+            background: rgba(255,255,255,0.1);
+            color: white;
+            padding: 8px 15px;
+            border-radius: 5px;
+            text-decoration: none;
+            transition: all 0.3s ease;
+        }
+
+        .nav-btn:hover {
+            background: #FFB800;
+            color: #4B1C3C;
+        }
+
+        /* Main Container */
+        .admin-container {
+            display: flex;
+            min-height: calc(100vh - 80px);
+        }
+
+        /* Sidebar */
+        .admin-sidebar {
+            width: 280px;
+            background: white;
+            box-shadow: 2px 0 10px rgba(0,0,0,0.05);
+        }
+
+        .sidebar-menu {
+            list-style: none;
+            padding: 20px 0;
+        }
+
+        .sidebar-menu li {
+            margin: 5px 0;
+        }
+
+        .sidebar-menu a {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 25px;
+            color: #666;
+            text-decoration: none;
+            transition: all 0.3s ease;
+            border-left: 4px solid transparent;
+        }
+
+        .sidebar-menu a:hover {
+            background: #f8f4f8;
+            color: #4B1C3C;
+            border-left-color: #FFB800;
+        }
+
+        .sidebar-menu li.active a {
+            background: linear-gradient(90deg, rgba(75,28,60,0.1) 0%, rgba(255,184,0,0.05) 100%);
+            color: #4B1C3C;
+            border-left-color: #FFB800;
+        }
+
+        .sidebar-menu i {
+            width: 20px;
+            color: #FFB800;
+        }
+
+        /* Main Content */
+        .admin-main {
+            flex: 1;
+            padding: 30px;
+        }
+
+        /* Page Header */
+        .page-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+
+        .page-header h1 {
+            color: #4B1C3C;
+            font-size: 2rem;
+        }
+
+        .page-header h1 i {
+            color: #FFB800;
+            margin-right: 10px;
+        }
+
+        /* Date Range */
+        .date-range {
+            background: white;
+            padding: 15px 20px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+
+        .date-range label {
+            color: #4B1C3C;
+            font-weight: 500;
+        }
+
+        .date-range input {
+            padding: 8px 12px;
+            border: 1px solid #e0e0e0;
+            border-radius: 5px;
+        }
+
+        .date-range button {
+            background: #4B1C3C;
+            color: white;
+            padding: 8px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background 0.3s ease;
+        }
+
+        .date-range button:hover {
+            background: #2F1224;
+        }
+
+        /* Stats Grid */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .stat-card {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .stat-icon {
+            width: 50px;
+            height: 50px;
+            background: rgba(255,184,0,0.1);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .stat-icon i {
+            font-size: 1.5rem;
+            color: #FFB800;
+        }
+
+        .stat-info h3 {
+            font-size: 1.8rem;
+            color: #4B1C3C;
+            line-height: 1.2;
+        }
+
+        .stat-info p {
+            color: #666;
+        }
+
+        /* Charts Row */
+        .charts-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .chart-card {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+        }
+
+        .chart-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #f0f0f0;
+        }
+
+        .chart-header h3 {
+            color: #4B1C3C;
+            font-size: 1.1rem;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .chart-header i {
+            color: #FFB800;
+        }
+
+        /* Tables */
+        .data-table {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+        }
+
+        .data-table h3 {
+            color: #4B1C3C;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .data-table h3 i {
+            color: #FFB800;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th {
+            text-align: left;
+            padding: 12px;
+            background: #f8f4f8;
+            color: #4B1C3C;
+        }
+
+        td {
+            padding: 12px;
+            border-bottom: 1px solid #f0f0f0;
+        }
+
+        .views-badge {
+            background: #4B1C3C;
+            color: white;
+            padding: 3px 8px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+        }
+
+        /* Responsive */
+        @media (max-width: 1200px) {
+            .stats-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            
+            .charts-row {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .page-header {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+            
+            .date-range {
+                flex-direction: column;
+                align-items: stretch;
+            }
+        }
+    </style>
 </head>
 <body>
-    <!-- Admin Navigation -->
-    <nav class="admin-nav">
-        <div class="container">
-            <div class="nav-left">
-                <div class="logo">
-                    <img src="../images/logo.png" alt="RAYS OF GRACE">
-                    <span>Analytics</span>
-                </div>
-            </div>
-            <div class="nav-right">
-                <a href="index.php" class="btn btn-outline btn-small">
-                    <i class="fas fa-tachometer-alt"></i> Dashboard
-                </a>
-            </div>
+    <!-- Top Navigation -->
+    <div class="admin-topnav">
+        <div class="logo-area">
+            <img src="../images/logo.png" alt="RAYS OF GRACE">
+            <span>Analytics Dashboard</span>
         </div>
-    </nav>
+        
+        <div class="admin-profile">
+            <span class="admin-badge">
+                <i class="fas fa-shield-alt"></i> <?php echo explode(' ', $user['fullname'])[0]; ?>
+            </span>
+            <a href="../logout.php" class="nav-btn">
+                <i class="fas fa-sign-out-alt"></i> Logout
+            </a>
+        </div>
+    </div>
 
-    <div class="analytics-container">
-        <!-- Header -->
-        <div class="analytics-header">
-            <h1>School Analytics</h1>
-            <div class="date-range">
-                <form method="GET" action="">
+    <div class="admin-container">
+        <!-- Sidebar -->
+        <aside class="admin-sidebar">
+            <ul class="sidebar-menu">
+                <li><a href="index.php"><i class="fas fa-home"></i> Dashboard</a></li>
+                <li><a href="users.php"><i class="fas fa-users"></i> Users</a></li>
+                <li><a href="lessons.php"><i class="fas fa-book"></i> Lessons</a></li>
+                <li><a href="upload-lesson.php"><i class="fas fa-upload"></i> Upload Lesson</a></li>
+                <li><a href="transactions.php"><i class="fas fa-credit-card"></i> Transactions</a></li>
+                <li class="active"><a href="analytics.php"><i class="fas fa-chart-line"></i> Analytics</a></li>
+                <li><a href="tickets.php"><i class="fas fa-ticket-alt"></i> Support Tickets</a></li>
+                <li><a href="settings.php"><i class="fas fa-cog"></i> Settings</a></li>
+                <li><a href="backup.php"><i class="fas fa-database"></i> Backup</a></li>
+            </ul>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="admin-main">
+            <!-- Page Header -->
+            <div class="page-header">
+                <h1><i class="fas fa-chart-line"></i> Analytics Dashboard</h1>
+                
+                <!-- Date Range Filter -->
+                <form method="GET" class="date-range">
+                    <label>From:</label>
                     <input type="date" name="start_date" value="<?php echo $start_date; ?>">
-                    <span>to</span>
+                    <label>To:</label>
                     <input type="date" name="end_date" value="<?php echo $end_date; ?>">
-                    <button type="submit" class="btn btn-primary">Apply</button>
+                    <button type="submit">Apply</button>
                 </form>
             </div>
-        </div>
 
-        <!-- Key Metrics -->
-        <div class="metrics-grid">
-            <div class="metric-card">
-                <div class="metric-icon" style="background: rgba(75, 28, 60, 0.1);">
-                    <i class="fas fa-users" style="color: #4B1C3C;"></i>
+            <!-- Key Metrics -->
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-icon">
+                        <i class="fas fa-users"></i>
+                    </div>
+                    <div class="stat-info">
+                        <h3><?php echo $user_stats['total']; ?></h3>
+                        <p>Total Users</p>
+                    </div>
                 </div>
-                <div class="metric-content">
-                    <span class="metric-value"><?php echo number_format($total_users); ?></span>
-                    <span class="metric-label">Total Users</span>
-                </div>
-                <div class="metric-trend positive">
-                    <i class="fas fa-arrow-up"></i> 12% vs last month
-                </div>
-            </div>
-            
-            <div class="metric-card">
-                <div class="metric-icon" style="background: rgba(76, 175, 80, 0.1);">
-                    <i class="fas fa-star" style="color: #4CAF50;"></i>
-                </div>
-                <div class="metric-content">
-                    <span class="metric-value"><?php echo number_format($active_subs); ?></span>
-                    <span class="metric-label">Active Subscriptions</span>
-                </div>
-                <div class="metric-trend positive">
-                    <i class="fas fa-arrow-up"></i> 8% this week
-                </div>
-            </div>
-            
-            <div class="metric-card">
-                <div class="metric-icon" style="background: rgba(255, 184, 0, 0.1);">
-                    <i class="fas fa-money-bill" style="color: #FFB800;"></i>
-                </div>
-                <div class="metric-content">
-                    <span class="metric-value">UGX <?php echo number_format($total_revenue); ?></span>
-                    <span class="metric-label">Revenue (30 days)</span>
-                </div>
-                <div class="metric-trend positive">
-                    <i class="fas fa-arrow-up"></i> 25% increase
-                </div>
-            </div>
-            
-            <div class="metric-card">
-                <div class="metric-icon" style="background: rgba(33, 150, 243, 0.1);">
-                    <i class="fas fa-eye" style="color: #2196F3;"></i>
-                </div>
-                <div class="metric-content">
-                    <span class="metric-value"><?php echo number_format($total_views); ?></span>
-                    <span class="metric-label">Total Lesson Views</span>
-                </div>
-                <div class="metric-trend positive">
-                    <i class="fas fa-arrow-up"></i> 1.2k avg daily
-                </div>
-            </div>
-        </div>
 
-        <!-- Charts Row -->
-        <div class="charts-grid">
-            <div class="chart-card full-width">
-                <h3><i class="fas fa-chart-line"></i> Revenue Trend</h3>
-                <canvas id="revenueChart" height="300"></canvas>
-            </div>
-        </div>
+                <div class="stat-card">
+                    <div class="stat-icon">
+                        <i class="fas fa-book-open"></i>
+                    </div>
+                    <div class="stat-info">
+                        <h3><?php echo $lesson_stats['total_lessons']; ?></h3>
+                        <p>Total Lessons</p>
+                    </div>
+                </div>
 
-        <div class="charts-grid">
-            <div class="chart-card">
-                <h3><i class="fas fa-user-plus"></i> User Growth</h3>
-                <canvas id="userChart" height="250"></canvas>
-            </div>
-            
-            <div class="chart-card">
-                <h3><i class="fas fa-chart-pie"></i> Subscription Distribution</h3>
-                <canvas id="subscriptionChart" height="250"></canvas>
-            </div>
-        </div>
+                <div class="stat-card">
+                    <div class="stat-icon">
+                        <i class="fas fa-crown"></i>
+                    </div>
+                    <div class="stat-info">
+                        <h3><?php echo $sub_stats['total'] ?? 0; ?></h3>
+                        <p>Active Subscriptions</p>
+                    </div>
+                </div>
 
-        <!-- Class Performance -->
-        <div class="performance-section">
-            <h3><i class="fas fa-chart-bar"></i> Class Performance</h3>
-            <div class="performance-table">
+                <div class="stat-card">
+                    <div class="stat-icon">
+                        <i class="fas fa-money-bill-wave"></i>
+                    </div>
+                    <div class="stat-info">
+                        <h3>UGX <?php echo number_format($total_revenue); ?></h3>
+                        <p>Total Revenue</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Charts Row -->
+            <div class="charts-row">
+                <!-- User Growth Chart -->
+                <div class="chart-card">
+                    <div class="chart-header">
+                        <h3><i class="fas fa-user-plus"></i> User Growth</h3>
+                    </div>
+                    <canvas id="userChart" height="200"></canvas>
+                </div>
+
+                <!-- Revenue Chart -->
+                <div class="chart-card">
+                    <div class="chart-header">
+                        <h3><i class="fas fa-chart-line"></i> Revenue Trend</h3>
+                    </div>
+                    <canvas id="revenueChart" height="200"></canvas>
+                </div>
+            </div>
+
+            <!-- User Distribution -->
+            <div class="charts-row">
+                <div class="chart-card">
+                    <div class="chart-header">
+                        <h3><i class="fas fa-chart-pie"></i> Users by Role</h3>
+                    </div>
+                    <canvas id="userRoleChart" height="200"></canvas>
+                </div>
+
+                <div class="chart-card">
+                    <div class="chart-header">
+                        <h3><i class="fas fa-chart-pie"></i> Subscription Plans</h3>
+                    </div>
+                    <canvas id="subscriptionChart" height="200"></canvas>
+                </div>
+            </div>
+
+            <!-- Popular Lessons Table -->
+            <div class="data-table">
+                <h3><i class="fas fa-fire"></i> Most Popular Lessons</h3>
                 <table>
                     <thead>
                         <tr>
+                            <th>Lesson</th>
                             <th>Class</th>
-                            <th>Students</th>
-                            <th>Lessons Started</th>
-                            <th>Completion Rate</th>
-                            <th>Avg Quiz Score</th>
-                            <th>Performance</th>
+                            <th>Subject</th>
+                            <th>Views</th>
+                            <th>Unique Students</th>
                         </tr>
                     </thead>
                     <tbody>
-                        <?php foreach ($class_performance as $class): 
-                            $completion_rate = $class['lessons_started'] > 0 
-                                ? round(($class['lessons_completed'] / $class['lessons_started']) * 100) 
-                                : 0;
-                            $performance_class = $completion_rate >= 70 ? 'excellent' : ($completion_rate >= 50 ? 'good' : 'needs-work');
-                        ?>
+                        <?php foreach ($popular_lessons as $lesson): ?>
                         <tr>
-                            <td><strong><?php echo $class['class']; ?></strong></td>
-                            <td><?php echo $class['students']; ?></td>
-                            <td><?php echo $class['lessons_started']; ?></td>
-                            <td><?php echo $completion_rate; ?>%</td>
-                            <td><?php echo round($class['avg_quiz_score'] ?? 0); ?>%</td>
-                            <td>
-                                <div class="performance-bar">
-                                    <div class="bar-fill <?php echo $performance_class; ?>" 
-                                         style="width: <?php echo $completion_rate; ?>%"></div>
-                                </div>
-                            </td>
+                            <td><?php echo htmlspecialchars($lesson['topic']); ?></td>
+                            <td><?php echo $lesson['class']; ?></td>
+                            <td><?php echo $lesson['subject']; ?></td>
+                            <td><span class="views-badge"><?php echo $lesson['views']; ?></span></td>
+                            <td><?php echo $lesson['unique_students']; ?></td>
                         </tr>
                         <?php endforeach; ?>
                     </tbody>
                 </table>
             </div>
-        </div>
 
-        <!-- Popular Lessons -->
-        <div class="popular-section">
-            <h3><i class="fas fa-fire"></i> Most Popular Lessons</h3>
-            <div class="popular-grid">
-                <?php foreach ($popular_lessons as $index => $lesson): ?>
-                <div class="popular-card">
-                    <div class="rank">#<?php echo $index + 1; ?></div>
-                    <div class="popular-info">
-                        <h4><?php echo htmlspecialchars($lesson['topic']); ?></h4>
-                        <p><?php echo $lesson['class']; ?> • <?php echo $lesson['subject']; ?></p>
-                        <div class="stats">
-                            <span><i class="fas fa-eye"></i> <?php echo number_format($lesson['views']); ?> views</span>
-                            <span><i class="fas fa-users"></i> <?php echo $lesson['unique_students']; ?> students</span>
-                        </div>
+            <!-- Quick Stats Row -->
+            <div class="stats-grid" style="margin-top: 30px;">
+                <div class="stat-card">
+                    <div class="stat-icon">
+                        <i class="fas fa-question-circle"></i>
+                    </div>
+                    <div class="stat-info">
+                        <h3><?php echo round($quiz_stats['avg_score'] ?? 0); ?>%</h3>
+                        <p>Avg Quiz Score</p>
                     </div>
                 </div>
-                <?php endforeach; ?>
-            </div>
-        </div>
 
-        <!-- Device Analytics -->
-        <div class="device-section">
-            <h3><i class="fas fa-mobile-alt"></i> Device Usage (Last 7 Days)</h3>
-            <div class="device-grid">
-                <?php 
-                $total_devices = array_sum(array_column($devices, 'count'));
-                foreach ($devices as $device): 
-                    $percentage = round(($device['count'] / $total_devices) * 100);
-                ?>
-                <div class="device-item">
-                    <i class="fas <?php echo $device['device_type'] === 'Web' ? 'fa-laptop' : 'fa-mobile-alt'; ?>"></i>
-                    <span class="device-name"><?php echo $device['device_type']; ?></span>
-                    <span class="device-percentage"><?php echo $percentage; ?>%</span>
-                    <div class="device-bar">
-                        <div class="bar-fill" style="width: <?php echo $percentage; ?>%"></div>
+                <div class="stat-card">
+                    <div class="stat-icon">
+                        <i class="fas fa-ticket-alt"></i>
+                    </div>
+                    <div class="stat-info">
+                        <h3><?php echo $ticket_stats['open'] ?? 0; ?></h3>
+                        <p>Open Tickets</p>
                     </div>
                 </div>
-                <?php endforeach; ?>
-            </div>
-        </div>
 
-        <!-- Export Options -->
-        <div class="export-section">
-            <h3>Export Reports</h3>
-            <div class="export-buttons">
-                <button class="btn btn-outline" onclick="exportReport('revenue')">
-                    <i class="fas fa-file-invoice"></i> Revenue Report
-                </button>
-                <button class="btn btn-outline" onclick="exportReport('users')">
-                    <i class="fas fa-file-alt"></i> User Report
-                </button>
-                <button class="btn btn-outline" onclick="exportReport('lessons')">
-                    <i class="fas fa-file-pdf"></i> Lesson Analytics
-                </button>
-                <button class="btn btn-outline" onclick="exportReport('full')">
-                    <i class="fas fa-file-excel"></i> Full Export (Excel)
-                </button>
+                <div class="stat-card">
+                    <div class="stat-icon">
+                        <i class="fas fa-check-circle"></i>
+                    </div>
+                    <div class="stat-info">
+                        <h3><?php echo $lesson_stats['published']; ?></h3>
+                        <p>Published Lessons</p>
+                    </div>
+                </div>
+
+                <div class="stat-card">
+                    <div class="stat-icon">
+                        <i class="fas fa-pencil-alt"></i>
+                    </div>
+                    <div class="stat-info">
+                        <h3><?php echo $lesson_stats['drafts']; ?></h3>
+                        <p>Draft Lessons</p>
+                    </div>
+                </div>
             </div>
-        </div>
+        </main>
     </div>
 
-    <style>
-    .analytics-container {
-        max-width: 1400px;
-        margin: 0 auto;
-        padding: 30px 20px;
-    }
-    
-    .analytics-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: 30px;
-    }
-    
-    .analytics-header h1 {
-        color: #4B1C3C;
-    }
-    
-    .date-range form {
-        display: flex;
-        gap: 10px;
-        align-items: center;
-    }
-    
-    .date-range input {
-        padding: 8px 12px;
-        border: 1px solid #E0E0E0;
-        border-radius: 5px;
-    }
-    
-    .metrics-grid {
-        display: grid;
-        grid-template-columns: repeat(4, 1fr);
-        gap: 20px;
-        margin-bottom: 30px;
-    }
-    
-    .metric-card {
-        background: white;
-        padding: 20px;
-        border-radius: 10px;
-        display: flex;
-        align-items: center;
-        gap: 15px;
-        box-shadow: 0 2px 5px rgba(0,0,0,0.05);
-        position: relative;
-    }
-    
-    .metric-icon {
-        width: 50px;
-        height: 50px;
-        border-radius: 10px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 1.5rem;
-    }
-    
-    .metric-content {
-        flex: 1;
-    }
-    
-    .metric-value {
-        display: block;
-        font-size: 1.5rem;
-        font-weight: 700;
-        color: #333;
-    }
-    
-    .metric-label {
-        color: #666;
-        font-size: 0.9rem;
-    }
-    
-    .metric-trend {
-        position: absolute;
-        top: 10px;
-        right: 10px;
-        font-size: 0.8rem;
-        padding: 3px 8px;
-        border-radius: 3px;
-    }
-    
-    .metric-trend.positive {
-        background: #E8F5E9;
-        color: #4CAF50;
-    }
-    
-    .metric-trend.negative {
-        background: #FFEBEE;
-        color: #f44336;
-    }
-    
-    .charts-grid {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 20px;
-        margin-bottom: 30px;
-    }
-    
-    .chart-card {
-        background: white;
-        padding: 20px;
-        border-radius: 10px;
-        box-shadow: 0 2px 5px rgba(0,0,0,0.05);
-    }
-    
-    .chart-card.full-width {
-        grid-column: 1 / -1;
-    }
-    
-    .chart-card h3 {
-        color: #4B1C3C;
-        margin-bottom: 15px;
-        display: flex;
-        align-items: center;
-        gap: 8px;
-    }
-    
-    .chart-card h3 i {
-        color: #FFB800;
-    }
-    
-    .performance-section,
-    .popular-section,
-    .device-section,
-    .export-section {
-        background: white;
-        padding: 25px;
-        border-radius: 10px;
-        margin-bottom: 30px;
-    }
-    
-    .performance-section h3,
-    .popular-section h3,
-    .device-section h3,
-    .export-section h3 {
-        color: #4B1C3C;
-        margin-bottom: 20px;
-        display: flex;
-        align-items: center;
-        gap: 8px;
-    }
-    
-    .performance-section h3 i,
-    .popular-section h3 i,
-    .device-section h3 i,
-    .export-section h3 i {
-        color: #FFB800;
-    }
-    
-    .performance-table {
-        overflow-x: auto;
-    }
-    
-    .performance-table table {
-        width: 100%;
-        border-collapse: collapse;
-    }
-    
-    .performance-table th {
-        text-align: left;
-        padding: 12px;
-        background: #F5F5F5;
-        color: #4B1C3C;
-    }
-    
-    .performance-table td {
-        padding: 12px;
-        border-bottom: 1px solid #F0F0F0;
-    }
-    
-    .performance-bar {
-        width: 150px;
-        height: 8px;
-        background: #F0F0F0;
-        border-radius: 4px;
-    }
-    
-    .bar-fill {
-        height: 100%;
-        border-radius: 4px;
-    }
-    
-    .bar-fill.excellent {
-        background: #4CAF50;
-    }
-    
-    .bar-fill.good {
-        background: #FFB800;
-    }
-    
-    .bar-fill.needs-work {
-        background: #f44336;
-    }
-    
-    .popular-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-        gap: 15px;
-    }
-    
-    .popular-card {
-        background: #F9F9F9;
-        padding: 15px;
-        border-radius: 5px;
-        display: flex;
-        align-items: center;
-        gap: 15px;
-    }
-    
-    .rank {
-        width: 40px;
-        height: 40px;
-        background: #4B1C3C;
-        color: white;
-        border-radius: 5px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-weight: 700;
-    }
-    
-    .popular-info {
-        flex: 1;
-    }
-    
-    .popular-info h4 {
-        color: #333;
-        margin-bottom: 3px;
-        font-size: 0.95rem;
-    }
-    
-    .popular-info p {
-        color: #666;
-        font-size: 0.8rem;
-        margin-bottom: 5px;
-    }
-    
-    .stats {
-        display: flex;
-        gap: 10px;
-        font-size: 0.8rem;
-        color: #999;
-    }
-    
-    .stats i {
-        margin-right: 3px;
-        color: #FFB800;
-    }
-    
-    .device-grid {
-        display: flex;
-        flex-direction: column;
-        gap: 15px;
-    }
-    
-    .device-item {
-        display: flex;
-        align-items: center;
-        gap: 15px;
-    }
-    
-    .device-item i {
-        width: 30px;
-        font-size: 1.2rem;
-        color: #4B1C3C;
-    }
-    
-    .device-name {
-        width: 100px;
-        font-weight: 500;
-    }
-    
-    .device-percentage {
-        width: 50px;
-        font-weight: 600;
-        color: #4B1C3C;
-    }
-    
-    .device-bar {
-        flex: 1;
-        height: 8px;
-        background: #F0F0F0;
-        border-radius: 4px;
-    }
-    
-    .export-buttons {
-        display: flex;
-        gap: 15px;
-        flex-wrap: wrap;
-    }
-    
-    @media (max-width: 1200px) {
-        .metrics-grid {
-            grid-template-columns: repeat(2, 1fr);
-        }
-        
-        .charts-grid {
-            grid-template-columns: 1fr;
-        }
-    }
-    
-    @media (max-width: 768px) {
-        .analytics-header {
-            flex-direction: column;
-            gap: 15px;
-        }
-        
-        .date-range form {
-            flex-direction: column;
-        }
-        
-        .metrics-grid {
-            grid-template-columns: 1fr;
-        }
-        
-        .popular-grid {
-            grid-template-columns: 1fr;
-        }
-        
-        .export-buttons {
-            flex-direction: column;
-        }
-    }
-    </style>
-
     <script>
-    // Revenue Chart
-    const revenueCtx = document.getElementById('revenueChart').getContext('2d');
-    new Chart(revenueCtx, {
-        type: 'line',
-        data: {
-            labels: <?php echo json_encode(array_column($revenue_data, 'date')); ?>,
-            datasets: [{
-                label: 'Revenue (UGX)',
-                data: <?php echo json_encode(array_column($revenue_data, 'revenue')); ?>,
-                borderColor: '#4B1C3C',
-                backgroundColor: 'rgba(75, 28, 60, 0.1)',
-                tension: 0.4,
-                fill: true
-            }]
-        },
-        options: {
-            responsive: true,
-            plugins: {
-                legend: {
-                    display: false
-                }
+        // User Growth Chart
+        const userCtx = document.getElementById('userChart').getContext('2d');
+        new Chart(userCtx, {
+            type: 'line',
+            data: {
+                labels: <?php 
+                    $dates = array_column($user_growth, 'date');
+                    $labels = array_map(function($date) {
+                        return date('M d', strtotime($date));
+                    }, $dates);
+                    echo json_encode($labels);
+                ?>,
+                datasets: [{
+                    label: 'New Users',
+                    data: <?php echo json_encode(array_column($user_growth, 'new_users')); ?>,
+                    borderColor: '#4B1C3C',
+                    backgroundColor: 'rgba(75, 28, 60, 0.1)',
+                    borderWidth: 2,
+                    tension: 0.4,
+                    fill: true
+                }]
             },
-            scales: {
-                y: {
-                    beginAtZero: true,
-                    ticks: {
-                        callback: function(value) {
-                            return 'UGX ' + value.toLocaleString();
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: {
+                        display: false
+                    }
+                }
+            }
+        });
+
+        // Revenue Chart
+        const revenueCtx = document.getElementById('revenueChart').getContext('2d');
+        new Chart(revenueCtx, {
+            type: 'bar',
+            data: {
+                labels: <?php 
+                    $dates = array_column($revenue_data, 'date');
+                    $labels = array_map(function($date) {
+                        return date('M d', strtotime($date));
+                    }, $dates);
+                    echo json_encode($labels);
+                ?>,
+                datasets: [{
+                    label: 'Revenue (UGX)',
+                    data: <?php echo json_encode(array_column($revenue_data, 'revenue')); ?>,
+                    backgroundColor: '#FFB800',
+                    borderRadius: 5
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: {
+                        display: false
+                    }
+                },
+                scales: {
+                    y: {
+                        ticks: {
+                            callback: function(value) {
+                                return 'UGX ' + value;
+                            }
                         }
                     }
                 }
             }
-        }
-    });
+        });
 
-    // User Growth Chart
-    const userCtx = document.getElementById('userChart').getContext('2d');
-    new Chart(userCtx, {
-        type: 'bar',
-        data: {
-            labels: <?php echo json_encode(array_column($user_growth, 'date')); ?>,
-            datasets: [{
-                label: 'New Users',
-                data: <?php echo json_encode(array_column($user_growth, 'new_users')); ?>,
-                backgroundColor: '#4B1C3C',
-                borderRadius: 5
-            }]
-        },
-        options: {
-            responsive: true,
-            plugins: {
-                legend: {
-                    display: false
+        // User Role Chart
+        const roleCtx = document.getElementById('userRoleChart').getContext('2d');
+        new Chart(roleCtx, {
+            type: 'doughnut',
+            data: {
+                labels: ['Students', 'Parents', 'Teachers', 'Admins'],
+                datasets: [{
+                    data: [
+                        <?php echo $user_stats['students']; ?>,
+                        <?php echo $user_stats['parents']; ?>,
+                        <?php echo $user_stats['teachers']; ?>,
+                        <?php echo $user_stats['admins']; ?>
+                    ],
+                    backgroundColor: ['#4CAF50', '#2196F3', '#FF9800', '#f44336'],
+                    borderWidth: 0
+                }]
+            },
+            options: {
+                responsive: true,
+                cutout: '70%',
+                plugins: {
+                    legend: {
+                        position: 'bottom'
+                    }
                 }
             }
-        }
-    });
+        });
 
-    // Subscription Chart
-    const subCtx = document.getElementById('subscriptionChart').getContext('2d');
-    new Chart(subCtx, {
-        type: 'doughnut',
-        data: {
-            labels: <?php echo json_encode(array_column($subscriptions, 'plan')); ?>,
-            datasets: [{
-                data: <?php echo json_encode(array_column($subscriptions, 'count')); ?>,
-                backgroundColor: ['#4B1C3C', '#FFB800', '#4CAF50'],
-                borderWidth: 0
-            }]
-        },
-        options: {
-            responsive: true,
-            plugins: {
-                legend: {
-                    position: 'bottom'
+        // Subscription Chart
+        const subCtx = document.getElementById('subscriptionChart').getContext('2d');
+        new Chart(subCtx, {
+            type: 'doughnut',
+            data: {
+                labels: ['Monthly', 'Termly', 'Yearly'],
+                datasets: [{
+                    data: [
+                        <?php echo $sub_stats['monthly'] ?? 0; ?>,
+                        <?php echo $sub_stats['termly'] ?? 0; ?>,
+                        <?php echo $sub_stats['yearly'] ?? 0; ?>
+                    ],
+                    backgroundColor: ['#FFB800', '#4B1C3C', '#4CAF50'],
+                    borderWidth: 0
+                }]
+            },
+            options: {
+                responsive: true,
+                cutout: '70%',
+                plugins: {
+                    legend: {
+                        position: 'bottom'
+                    }
                 }
             }
-        }
-    });
-
-    function exportReport(type) {
-        window.location.href = `export-report.php?type=${type}&start=<?php echo $start_date; ?>&end=<?php echo $end_date; ?>`;
-    }
+        });
     </script>
 </body>
 </html>

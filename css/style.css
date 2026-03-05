@@ -157,11 +157,8 @@ h2 span {
 
 .navbar .container {
     display: flex;
-    justify-content: space-between;
     align-items: center;
-    max-width: 1400px;
-    margin: 0 auto;
-    padding: 0 30px;
+    justify-content: space-between;
 }
 
 /* ===== LOGO ===== */
@@ -227,16 +224,17 @@ h2 span {
 
 /* ===== MOBILE MENU BUTTON ===== */
 .mobile-menu {
-    display: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     width: 45px;
     height: 45px;
     background: linear-gradient(135deg, var(--purple-light) 0%, var(--purple) 100%);
     border-radius: 10px;
-    align-items: center;
-    justify-content: center;
     cursor: pointer;
     transition: var(--transition);
     box-shadow: 0 5px 15px rgba(75, 28, 60, 0.2);
+    margin: 0;
 }
 
 .mobile-menu:hover {
@@ -247,8 +245,9 @@ h2 span {
 .mobile-menu i {
     color: white;
     font-size: 1.5rem;
+    line-height: 1; 
+    display: block;  
 }
-
 /* ===== NAVIGATION MENU ===== */
 .nav-menu {
     display: flex;
@@ -515,13 +514,6 @@ h2 span {
     .logo-text .sub {
         font-size: 0.7rem;
     }
-}
-/* Mobile menu button */
-.mobile-menu {
-    display: none;
-    font-size: 1.5rem;
-    color: var(--purple);
-    cursor: pointer;
 }
 
 /* ===== HERO SECTION ===== */
@@ -1044,7 +1036,7 @@ h2 span {
     }
     
     .mobile-menu {
-        display: block;
+        display: flex;
     }
     
     .nav-menu {

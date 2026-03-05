@@ -305,7 +305,7 @@
                         <li><i class="fas fa-check"></i> Quizzes & assessments</li>
                         <li><i class="fas fa-check"></i> Cancel anytime</li>
                     </ul>
-                    <a href="pricing.php?plan=monthly" class="btn btn-outline" style="width: 100%; text-align: center;">Choose Monthly</a>
+                    <a href="register.php?plan=monthly" class="btn btn-outline btn-block">Choose Monthly</a>
                 </div>
                 
                 <div class="pricing-card popular">
@@ -325,7 +325,7 @@
                         <li><i class="fas fa-check"></i> Progress tracking</li>
                         <li><i class="fas fa-check"></i> <strong>20% family discount</strong></li>
                     </ul>
-                    <a href="pricing.php?plan=termly" class="btn btn-primary" style="width: 100%; text-align: center;">Choose Termly</a>
+                    <a href="register.php?plan=termly" class="btn btn-primary btn-block">Choose Termly</a>
                 </div>
                 
                 <div class="pricing-card">
@@ -345,7 +345,7 @@
                         <li><i class="fas fa-check"></i> 20% family discount</li>
                         <li><i class="fas fa-check"></i> 2 months free</li>
                     </ul>
-                    <a href="pricing.php?plan=yearly" class="btn btn-outline" style="width: 100%; text-align: center;">Choose Yearly</a>
+                    <a href="register.php?plan=yearly" class="btn btn-outline btn-block">Choose Yearly</a>
                 </div>
             </div>
             
@@ -356,45 +356,34 @@
         </div>
     </section>
 
-    <!-- Free Trial Section -->
-<section class="trial" id="free-lessons">
-    <div class="container">
-        <h2><span>Try For Free</span></h2>
-        <p class="section-subtitle" style="color: rgba(255,255,255,0.9);">Access sample lessons before you subscribe</p>
-        
-        <div class="trial-grid">
-            <!-- P.4 Science -->
-            <div class="trial-card" onclick="location.href='trial.php#science'">
-                <i class="fas fa-leaf"></i>
-                <h3>P.4 Science</h3>
-                <p>Plants and photosynthesis</p>
-                <a href="trial.php#science" class="trial-btn">
-                    Watch Free <i class="fas fa-play"></i>
-                </a>
-            </div>
-
-            <!-- P.5 Maths -->
-            <div class="trial-card" onclick="location.href='trial.php#maths'">
-                <i class="fas fa-calculator"></i>
-                <h3>P.5 Maths</h3>
-                <p>Fractions and decimals</p>
-                <a href="trial.php#maths" class="trial-btn">
-                    Watch Free <i class="fas fa-play"></i>
-                </a>
-            </div>
-
-            <!-- P.7 Social Studies -->
-            <div class="trial-card" onclick="location.href='trial.php#social'">
-                <i class="fas fa-globe-africa"></i>
-                <h3>P.7 Social Studies</h3>
-                <p>Map reading skills</p>
-                <a href="trial.php#social" class="trial-btn">
-                    Watch Free <i class="fas fa-play"></i>
-                </a>
+    <!-- ===== FREE TRIAL SECTION ===== -->
+    <section id="free-trial" class="trial">
+        <div class="container">
+            <h2><span>Try For Free</span></h2>
+            <p class="section-subtitle" style="color: rgba(255,255,255,0.9);">Access sample lessons before you subscribe</p>
+            
+            <div class="trial-grid">
+                <div class="trial-card">
+                    <i class="fas fa-leaf"></i>
+                    <h3>P.4 Science</h3>
+                    <p>Plants and photosynthesis</p>
+                    <a href="#" class="trial-btn">Watch Free <i class="fas fa-play"></i></a>
+                </div>
+                <div class="trial-card">
+                    <i class="fas fa-calculator"></i>
+                    <h3>P.5 Maths</h3>
+                    <p>Fractions and decimals</p>
+                    <a href="#" class="trial-btn">Watch Free <i class="fas fa-play"></i></a>
+                </div>
+                <div class="trial-card">
+                    <i class="fas fa-globe-africa"></i>
+                    <h3>P.7 Social Studies</h3>
+                    <p>Map reading skills</p>
+                    <a href="#" class="trial-btn">Watch Free <i class="fas fa-play"></i></a>
+                </div>
             </div>
         </div>
-    </div>
-</section>
+    </section>
 
     <!-- ===== FOOTER ===== -->
     <footer class="footer">
@@ -406,17 +395,17 @@
                     <div class="social-links">
                         <a href="https://www.facebook.com/profile.php?id=100057146993995" target="_blank" aria-label="Facebook"><i class="fab fa-facebook"></i></a>
                         <a href="https://x.com/raysofgracejr" target="_blank" aria-label="Twitter"><i class="fab fa-twitter"></i></a>
-                        <a href="https://www.youtube.com/@raysofgraceacademy" target="_blank" aria-label="YouTube"><i class="fab fa-youtube"></i></a>
+                        <a href="https://www.instagram.com/raysofgraceacademyuganda" target="_blank" aria-label="Instagram"><i class="fab fa-instagram"></i></a>
                         <a href="https://wa.me/256778086883" target="_blank" aria-label="WhatsApp"><i class="fab fa-whatsapp"></i></a>
                     </div>
                 </div>
                 <div>
                     <h4>Quick Links</h4>
                     <ul>
-                        <li><a href="index.php">Home</a></li>
-                        <li><a href="#class es">Classes</a></li>
+                        <li><a href="#home">Home</a></li>
+                        <li><a href="#classes">Classes</a></li>
                         <li><a href="#subjects">Subjects</a></li>
-                        <li><a href="pricing.php">Pricing</a></li>
+                        <li><a href="#pricing">Pricing</a></li>
                     </ul>
                 </div>
                 <div>
@@ -438,7 +427,7 @@
                 </div>
             </div>
             <div class="footer-bottom">
-                <p>&copy; 2026 RAYS OF GRACE Junior School. All rights reserved.</p>
+                <p>&copy; 2026 Rays of Grace | All Rights Reserved</p>
             </div>
         </div>
     </footer>
@@ -446,37 +435,47 @@
     <!-- JavaScript -->
     <script src="js/navbar.js"></script>
     <script>
-        // Mobile menu toggle
-        document.querySelector('.mobile-menu').addEventListener('click', function() {
-            document.querySelector('.nav-menu').classList.toggle('active');
-        });
-        
-        // Subject tabs
-        // This function handles the tab switching for the subjects section. When a tab button is clicked, it updates the active state of the buttons and shows the corresponding subject grid while hiding the other. This allows users to easily switch between viewing subjects for lower primary (P.1-P.3) and upper primary (P.4-P.7) without needing to reload the page or navigate to a different section.
-        function showSubjects(level) {
-            // Update tab buttons
-            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
-            event.target.classList.add('active');
-            
-            // Show correct subject grid
-            document.getElementById('lower-subjects').classList.remove('active');
-            document.getElementById('upper-subjects').classList.remove('active');
-            
-            if (level === 'lower') {
-                document.getElementById('lower-subjects').classList.add('active');
-            } else {
-                document.getElementById('upper-subjects').classList.add('active');
+        // Subject tabs functionality (if not already handled externally)
+        document.addEventListener('DOMContentLoaded', function() {
+            const tabLower = document.getElementById('tab-lower');
+            const tabUpper = document.getElementById('tab-upper');
+            const lowerSubjects = document.getElementById('lower-subjects');
+            const upperSubjects = document.getElementById('upper-subjects');
+
+            if (tabLower && tabUpper) {
+                tabLower.addEventListener('click', function() {
+                    tabLower.classList.add('active');
+                    tabUpper.classList.remove('active');
+                    lowerSubjects.classList.add('active');
+                    upperSubjects.classList.remove('active');
+                });
+
+                tabUpper.addEventListener('click', function() {
+                    tabUpper.classList.add('active');
+                    tabLower.classList.remove('active');
+                    upperSubjects.classList.add('active');
+                    lowerSubjects.classList.remove('active');
+                });
             }
-        }
-        
-        // Smooth scrolling for anchor links
-        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
-            anchor.addEventListener('click', function (e) {
-                e.preventDefault();
-                const target = document.querySelector(this.getAttribute('href'));
-                if (target) {
-                    target.scrollIntoView({ behavior: 'smooth' });
-                }
+
+            // Smooth scrolling for anchor links
+            document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+                anchor.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    const target = document.querySelector(this.getAttribute('href'));
+                    if (target) {
+                        target.scrollIntoView({ behavior: 'smooth' });
+                        // Close mobile menu if open
+                        const navMenu = document.getElementById('nav-menu');
+                        const mobileMenu = document.getElementById('mobile-menu');
+                        if (navMenu && navMenu.classList.contains('active')) {
+                            navMenu.classList.remove('active');
+                            mobileMenu.classList.remove('active');
+                            const icon = mobileMenu.querySelector('i');
+                            icon.className = 'fas fa-bars';
+                        }
+                    }
+                });
             });
         });
     </script>

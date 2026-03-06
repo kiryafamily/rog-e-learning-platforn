@@ -165,7 +165,7 @@ $totalHours = round($totalMinutes / 60, 1);
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Progress Report - RAYS OF GRACE</title>
+    <title>Progress Report | ROGELE</title>
     <link rel="stylesheet" href="css/style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -715,7 +715,7 @@ $totalHours = round($totalMinutes / 60, 1);
                 <div class="chart-header">
                     <h3><i class="fas fa-chart-pie"></i> Overall Progress</h3>
                 </div>
-                <canvas id="progressChart" height="200"></canvas>
+                <canvas id="progressChart" height="200" width="200"></canvas>
             </div>
         </div>
 

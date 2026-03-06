@@ -56,7 +56,7 @@ ob_clean();
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login - RAYS OF GRACE Junior School</title>
+    <title>Login | ROGELE</title>
     <link rel="stylesheet" href="css/style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 </head>
@@ -64,9 +64,9 @@ ob_clean();
     <!-- Simple Navigation -->
     <nav class="navbar">
         <div class="container">
-            <div class="logo">
+            <a href="index.php" style="display: block; line-height: 0;">
                 <img src="images/logo-3.png" alt="RAYS OF GRACE Junior School">
-            </div>
+            </a>
             <a href="index.php" class="btn btn-outline"><i class="fas fa-home"></i> Back to Home</a>
         </div>
     </nav>
@@ -152,6 +152,58 @@ ob_clean();
     </section>
 
     <style>
+    /* Responsive Back to Home button */
+    .navbar .btn-outline {
+        font-size: 0.9rem;
+        padding: 8px 16px;
+        white-space: nowrap;
+    }
+
+    /* Tablet screens */
+    @media (max-width: 768px) {
+        .navbar .btn-outline {
+            font-size: 0.85rem;
+            padding: 6px 12px;
+        }
+        
+        .navbar .container {
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+    }
+
+    /* Mobile screens */
+    @media (max-width: 480px) {
+        .navbar .container {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 15px;
+        }
+        
+        .navbar .btn-outline {
+            font-size: 0.8rem;
+            padding: 8px 16px;
+            width: 100%;
+            text-align: center;
+            margin-top: 5px;
+        }
+        
+        .logo img {
+            height: 40px; /* Slightly smaller logo on mobile */
+        }
+    }
+
+    /* Small mobile screens */
+    @media (max-width: 360px) {
+        .navbar .btn-outline {
+            font-size: 0.75rem;
+            padding: 6px 12px;
+        }
+        
+        .navbar .btn-outline i {
+            font-size: 0.8rem;
+        }
+    }
     /* Auth page specific styles */
     .auth-section {
         min-height: calc(100vh - 80px);

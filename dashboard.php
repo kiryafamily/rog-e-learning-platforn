@@ -946,91 +946,91 @@ function timeAgo($datetime) {
 
         /* Mobile Phones (480px and below) */
         @media (max-width: 480px) {
-            .dashboard-nav {
-                flex-direction: column;
-                align-items: stretch;
-            }
-            
-            .user-menu {
-                justify-content: space-between;
-            }
-            
-            .user-greeting {
-                flex: 1;
-            }
-            
-            .dropbtn {
-                width: 100%;
-            }
-            
-            .dropdown-content {
-                width: 100%;
-            }
-            
-            .subscription-banner {
-                flex-direction: column;
-                text-align: center;
-                padding: 20px 15px;
-            }
-            
-            .banner-content {
-                flex-direction: column;
-                text-align: center;
-            }
-            
-            .btn-banner {
-                width: 100%;
-                justify-content: center;
-            }
-            
-            .welcome-section {
-                flex-direction: column;
-                text-align: center;
-            }
-            
-            .stats-grid {
-                grid-template-columns: 1fr;
-            }
-            
-            .stat-card {
-                padding: 15px;
-            }
-            
-            .stat-value {
-                font-size: 1.5rem;
-            }
-            
-            .lessons-grid {
-                grid-template-columns: 1fr;
-            }
-            
-            .class-tiles {
-                grid-template-columns: repeat(2, 1fr);
-            }
-            
-            .sidebar-menu {
-                grid-template-columns: repeat(2, 1fr);
-            }
-            
-            .dashboard-main {
-                padding: 15px;
-            }
-            
-            .section-title {
-                flex-direction: column;
-                align-items: flex-start;
-            }
-            
-            .activity-item {
-                flex-wrap: wrap;
-            }
-            
-            .activity-icon {
-                width: 35px;
-                height: 35px;
-                font-size: 0.9rem;
-            }
+        /* Make sidebar full width and vertical */
+        .dashboard-sidebar {
+            width: 100%;
+            position: static;
+            margin-bottom: 20px;
         }
+        
+        /* KEEP MENU VERTICAL - like screenshot */
+        .sidebar-menu {
+            display: block; /* Simple vertical stack */
+            padding: 10px 0;
+        }
+        
+        .sidebar-menu li {
+            width: 100%;
+        }
+        
+        .sidebar-menu a {
+            padding: 15px 20px;
+            font-size: 1rem;
+            border-left: 4px solid transparent;
+        }
+        
+        /* Top navigation adjustments */
+        .dashboard-nav {
+            flex-direction: column;
+            align-items: stretch;
+            padding: 10px;
+        }
+        
+        /* Stats grid - single column */
+        .stats-grid {
+            grid-template-columns: 1fr;
+            gap: 12px;
+        }
+        
+        /* Class tiles - 2 columns is fine */
+        .class-tiles {
+            grid-template-columns: repeat(2, 1fr);
+            gap: 8px;
+        }
+        
+        /* Welcome section */
+        .welcome-section {
+            flex-direction: column;
+            text-align: center;
+            padding: 20px 15px;
+        }
+        
+        .streak-badge {
+            margin-top: 10px;
+        }
+        
+        /* Subscription banner */
+        .subscription-banner {
+            flex-direction: column;
+            text-align: center;
+            padding: 20px 15px;
+        }
+        
+        .banner-content {
+            flex-direction: column;
+        }
+        
+        .btn-banner {
+            width: 100%;
+        }
+        
+        /* Activity items */
+        .activity-item {
+            padding: 12px 0;
+        }
+        
+        .activity-icon {
+            width: 40px;
+            height: 40px;
+        }
+        
+        /* Section titles */
+        .section-title {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 5px;
+        }
+    }
 
         /* Small Mobile (360px and below) */
         @media (max-width: 360px) {

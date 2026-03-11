@@ -622,7 +622,9 @@ $totalHours = round($totalMinutes / 60, 1);
     <!-- Navigation -->
     <nav class="dashboard-nav">
         <div class="logo-area">
-            <img src="images/logo-3.png" alt="RAYS OF GRACE">
+            <a href="index.php">
+                <img src="images/logo-3.png" alt="RAYS OF GRACE Junior School">
+            </a>
         </div>
         <div class="nav-right">
             <a href="dashboard.php" class="btn-outline">

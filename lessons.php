@@ -105,7 +105,7 @@ if ($hasAccess) {
             min-height: 100vh;
         }
 
-        /* Navigation */
+        /* ===== HORIZONTAL NAVIGATION - ALWAYS HORIZONTAL ===== */
         .dashboard-nav {
             background: white;
             padding: 12px 20px;
@@ -121,30 +121,33 @@ if ($hasAccess) {
             align-items: center;
             max-width: 1400px;
             margin: 0 auto;
-            flex-wrap: wrap;
             gap: 15px;
         }
 
         .nav-left .logo {
             display: flex;
             align-items: center;
-            gap: 10px;
+        }
+
+        .nav-left .logo a {
+            display: block;
+            line-height: 0;
         }
 
         .nav-left .logo img {
             height: 40px;
             width: auto;
+            transition: var(--transition);
         }
 
-        .nav-left .logo span {
-            font-size: 1.2rem;
-            font-weight: 600;
-            color: var(--purple);
+        .nav-left .logo img:hover {
+            transform: scale(1.05);
         }
 
         .nav-right {
             display: flex;
             gap: 10px;
+            align-items: center;
             flex-wrap: wrap;
         }
 
@@ -153,6 +156,37 @@ if ($hasAccess) {
             font-size: 0.9rem;
             border-radius: 50px;
             white-space: nowrap;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            transition: var(--transition);
+        }
+
+        .btn-outline {
+            background: transparent;
+            border: 2px solid var(--purple);
+            color: var(--purple);
+        }
+
+        .btn-outline:hover {
+            background: var(--purple);
+            color: white;
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-sm);
+        }
+
+        .btn-primary {
+            background: var(--purple);
+            color: white;
+            border: 2px solid var(--purple);
+        }
+
+        .btn-primary:hover {
+            background: var(--purple-dark);
+            border-color: var(--purple-dark);
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-sm);
         }
 
         /* Main Container */
@@ -720,21 +754,35 @@ if ($hasAccess) {
 
         /* Mobile Phones (480px and below) */
         @media (max-width: 480px) {
+            /* ===== HORIZONTAL NAVIGATION - STAYS HORIZONTAL ===== */
             .dashboard-nav .container {
-                flex-direction: column;
-                align-items: flex-start;
+                flex-direction: row;  /* Keep horizontal */
+                align-items: center;
+                justify-content: space-between;
+                flex-wrap: nowrap;    /* Prevent wrapping */
+                gap: 8px;
+            }
+            
+            .nav-left .logo img {
+                height: 32px;  /* Smaller logo on mobile */
             }
             
             .nav-right {
-                width: 100%;
-                justify-content: stretch;
+                flex-direction: row;  /* Keep buttons horizontal */
+                gap: 6px;
             }
             
-            .nav-right .btn {
-                flex: 1;
-                text-align: center;
+            .btn-small {
+                padding: 6px 12px;
+                font-size: 0.8rem;
+                white-space: nowrap;
             }
             
+            .btn-small i {
+                margin-right: 4px;
+            }
+            
+            /* Rest of your mobile styles */
             .class-buttons {
                 grid-template-columns: repeat(3, 1fr);
             }
@@ -776,6 +824,21 @@ if ($hasAccess) {
 
         /* Small Mobile (360px and below) */
         @media (max-width: 360px) {
+            /* Navigation stays horizontal but more compact */
+            .dashboard-nav .container {
+                gap: 4px;
+            }
+            
+            .btn-small {
+                padding: 5px 8px;
+                font-size: 0.75rem;
+            }
+            
+            .btn-small i {
+                margin-right: 2px;
+                font-size: 0.8rem;
+            }
+            
             .class-buttons {
                 grid-template-columns: repeat(2, 1fr);
             }
@@ -796,7 +859,7 @@ if ($hasAccess) {
     </style>
 </head>
 <body>
-    <!-- Navigation -->
+    <!-- Navigation - Always Horizontal -->
     <nav class="dashboard-nav">
         <div class="container">
             <div class="nav-left">

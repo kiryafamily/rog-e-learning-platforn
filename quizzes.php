@@ -1,5 +1,5 @@
 <?php
-// quizzes.php - FULLY RESPONSIVE VERSION
+// quizzes.php - FULLY RESPONSIVE VERSION WITH HORIZONTAL NAV
 // Quiz Listing Page
 
 require_once 'includes/config.php';
@@ -90,7 +90,7 @@ function timeAgo($datetime) {
             min-height: 100vh;
         }
 
-        /* ===== RESPONSIVE NAVIGATION ===== */
+        /* ===== HORIZONTAL NAVIGATION - ALWAYS HORIZONTAL ===== */
         .dashboard-nav {
             background: var(--white);
             padding: 12px 20px;
@@ -540,29 +540,40 @@ function timeAgo($datetime) {
 
         /* Mobile Phones (480px and below) */
         @media (max-width: 480px) {
+            /* ===== HORIZONTAL NAVIGATION - STAYS HORIZONTAL ===== */
             .dashboard-nav {
-                padding: 10px;
+                padding: 8px 12px;
+            }
+            
+            .dashboard-nav .container {
+                flex-direction: row;        /* Keep horizontal */
+                align-items: center;
+                justify-content: space-between;
+                flex-wrap: nowrap;          /* Prevent wrapping */
+                gap: 8px;
             }
             
             .logo img {
-                height: 32px;
+                height: 32px;               /* Smaller logo */
             }
             
             .btn-dashboard {
-                padding: 8px 12px;
+                padding: 6px 12px;
                 font-size: 0.8rem;
+                white-space: nowrap;
+                gap: 4px;
             }
             
-            /* Hide text on very small screens, keep only icon */
-            .btn-dashboard span {
-                display: none;
-            }
-            
+            /* Show icon always, keep text visible */
             .btn-dashboard i {
-                font-size: 1.1rem;
-                margin: 0;
+                font-size: 0.9rem;
             }
             
+            .btn-dashboard span {
+                display: inline;             /* Keep text visible */
+            }
+            
+            /* Stats grid becomes 1 column */
             .stats-grid {
                 grid-template-columns: 1fr;
             }
@@ -617,12 +628,22 @@ function timeAgo($datetime) {
 
         /* Small Mobile (360px and below) */
         @media (max-width: 360px) {
+            /* Navigation stays horizontal but more compact */
+            .dashboard-nav .container {
+                gap: 4px;
+            }
+            
             .logo img {
                 height: 28px;
             }
             
             .btn-dashboard {
-                padding: 6px 10px;
+                padding: 5px 10px;
+                font-size: 0.75rem;
+            }
+            
+            .btn-dashboard i {
+                font-size: 0.8rem;
             }
             
             .quiz-header h3 {
@@ -647,10 +668,6 @@ function timeAgo($datetime) {
                 flex-direction: row;
             }
             
-            .btn-dashboard span {
-                display: inline;
-            }
-            
             .stats-grid {
                 grid-template-columns: repeat(3, 1fr);
             }
@@ -662,7 +679,7 @@ function timeAgo($datetime) {
     </style>
 </head>
 <body>
-    <!-- Navigation -->
+    <!-- Navigation - Always Horizontal -->
     <nav class="dashboard-nav">
         <div class="container">
             <a href="index.php" class="logo">
@@ -686,7 +703,7 @@ function timeAgo($datetime) {
                 Quiz Center
             </h1>
             <a href="dashboard.php" class="back-link">
-                <i class="fas fa-arrow-left"></i> Back to Dashboard
+                <i class="fas fa-arrow-right"></i> Back to Dashboard
             </a>
         </div>
 

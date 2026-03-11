@@ -954,10 +954,10 @@ function timeAgo($datetime) {
         }
         
         /* KEEP MENU VERTICAL - like screenshot */
-        .sidebar-menu {
-            display: block; /* Simple vertical stack */
+        /* .sidebar-menu {
+            display: block; 
             padding: 10px 0;
-        }
+        } */
         
         .sidebar-menu li {
             width: 100%;
@@ -970,11 +970,11 @@ function timeAgo($datetime) {
         }
         
         /* Top navigation adjustments */
-        .dashboard-nav {
+        /* .dashboard-nav {
             flex-direction: column;
             align-items: stretch;
             padding: 10px;
-        }
+        } */
         
         /* Stats grid - single column */
         .stats-grid {

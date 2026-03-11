@@ -9,7 +9,7 @@ require_once 'includes/functions.php';
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Contact Us - RAYS OF GRACE Junior School</title>
+    <title>Contact Us | ROGELE</title>
     <link rel="stylesheet" href="css/style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
@@ -561,7 +561,11 @@ require_once 'includes/functions.php';
     <nav class="navbar">
         <div class="container">
             <div class="logo">
-                <img src="images/logo-3.png" alt="RAYS OF GRACE Junior School">
+                <a href="index.php" style="display: block; line-height: 0;">
+                    <a href="index.php" style="display: block; line-height: 0;">
+                        <img src="images/logo-3.png" alt="RAYS OF GRACE Junior School">
+                    </a>
+                </a>
             </div>
             
             <div class="mobile-menu">
@@ -650,7 +654,7 @@ require_once 'includes/functions.php';
                     </div>
                     <div class="info-content">
                         <h3>Call Us</h3>
-                        <p>+256 XXX XXXXXX</p>
+                        <p>+256 778 086 883</p>
                         <p style="font-size: 0.85rem; color: #999;">Mon-Fri, 8am-5pm</p>
                     </div>
                 </div>

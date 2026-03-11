@@ -180,20 +180,11 @@ h2 span {
     transition: var(--transition);
 }
 
-.logo:hover::after {
-    width: 100%;
-}
-
 .logo img {
     height: 50px;
     width: auto;
     border-radius: 8px;
     transition: var(--transition);
-}
-
-.logo:hover img {
-    transform: scale(1.05);
-    box-shadow: 0 5px 15px rgba(75, 28, 60, 0.2);
 }
 
 .logo-text {

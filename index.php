@@ -7,7 +7,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>RAYS OF GRACE Junior School – Knowledge Changing Lives Forever</title>
+    <title>Rays of Grace | ROGELE</title>
     <!-- Font Awesome 6 (free) -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <!-- Google Fonts -->
@@ -21,7 +21,9 @@
     <nav class="navbar">
         <div class="container">
             <div class="logo">
-                <img src="images/logo-3.png" alt="RAYS OF GRACE Junior School">
+                <a href="index.php" style="display: block; line-height: 0;">
+                    <img src="images/logo-3.png" alt="RAYS OF GRACE Junior School">
+                </a>
             </div>
             
             <div class="mobile-menu" id="mobile-menu">
